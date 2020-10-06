@@ -6,7 +6,7 @@ namespace Kits.API
     public class Kit
     {
         public string Name;
-        public List<(string, IItemState)> Items;
+        public List<IItem> Items;
         public float Cooldown;
     }
 }

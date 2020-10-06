@@ -1,10 +1,9 @@
 ﻿using Kits.API;
-using OpenMod.API.Users;
+using OpenMod.API.Permissions;
 using OpenMod.Core.Commands;
 using OpenMod.Extensions.Games.Abstractions.Players;
-using Serilog;
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Kits.Commands
@@ -13,19 +12,29 @@ namespace Kits.Commands
     [CommandActor(typeof(IPlayerUser))]
     public class CommandKits : Command
     {
-        private readonly IKitManager kitManager;
-        private readonly IUserManager userManager;
+        private readonly IKitManager m_KitManager;
+        private readonly IPermissionChecker m_PermissionChecker;
 
-        public CommandKits(IServiceProvider serviceProvider, IKitManager kitManager, IUserManager userManager) : base(serviceProvider)
+        public CommandKits(IServiceProvider serviceProvider, IKitManager kitManager,
+            IPermissionChecker permissionChecker) : base(serviceProvider)
         {
-            this.kitManager = kitManager;
-            this.userManager = userManager;
+            m_KitManager = kitManager;
+            m_PermissionChecker = permissionChecker;
         }
 
         protected override async Task OnExecuteAsync()
         {
             var playerUser = (IPlayerUser)Context.Actor;
-
+            var kits = await m_KitManager.GetKits();
+            var kitNames = new List<string>();
+            foreach (var kit in kits)
+            {
+                if (await m_PermissionChecker.CheckPermissionAsync(playerUser, $"kits.{kit}") == PermissionGrantResult.Grant)
+                {
+                    kitNames.Add(kit.Name);
+                }
+            }
+            await PrintAsync(string.Join(", ", kitNames));
         }
     }
 }

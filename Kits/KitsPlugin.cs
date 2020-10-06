@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Localization;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using OpenMod.API.Plugins;
 using OpenMod.Core.Plugins;
 using System;
@@ -10,31 +8,21 @@ using System.Threading.Tasks;
 
 namespace Kits
 {
-    public class MyOpenModPlugin : OpenModUniversalPlugin
+    public class KitsPlugin : OpenModUniversalPlugin
     {
-        private readonly IConfiguration m_Configuration;
-        private readonly IStringLocalizer m_StringLocalizer;
-        private readonly ILogger<MyOpenModPlugin> m_Logger;
+        private readonly ILogger<KitsPlugin> m_Logger;
 
-        public MyOpenModPlugin(
-            IConfiguration configuration,
-            IStringLocalizer stringLocalizer,
-            ILogger<MyOpenModPlugin> logger,
-            IServiceProvider serviceProvider) : base(serviceProvider)
+        public KitsPlugin(ILogger<KitsPlugin> logger, IServiceProvider serviceProvider) : base(serviceProvider)
         {
-            m_Configuration = configuration;
-            m_StringLocalizer = stringLocalizer;
             m_Logger = logger;
         }
 
         protected override Task OnLoadAsync()
         {
-            return base.OnLoadAsync();
-        }
-
-        protected override Task OnUnloadAsync()
-        {
-            return base.OnUnloadAsync();
+            m_Logger.LogInformation("Made with <3 by DiFFoZ");
+            m_Logger.LogInformation("https://github.com/evolutionplugins \\ https://github.com/diffoz");
+            m_Logger.LogInformation("Discord: DiFFoZ#6745");
+            return Task.CompletedTask;
         }
     }
 }
