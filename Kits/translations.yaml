@@ -1,0 +1,11 @@
+commands:
+  kits: 'Your available kits: {KitNames}'
+  kit:
+    success: 'Kit {Kit.Name} succefully received'
+    cooldown: 'Kit {Kit.Name} have cooldown. Needs wait for {Cooldown} sec'
+    noPermission: "You don't have permission to get a kit {Kit.Name}"
+    notFound: 'Kit {Name} not found'
+    create:
+      noItems: 'Your inventory is empty'
+      success: 'Succefully created kit {Kit.Name}'
+    remove: 'Kit {Kit.Name} succefully created'

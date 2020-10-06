@@ -74,7 +74,7 @@ namespace Kits.Providers
                 m_PermissionRegistry.RegisterPermission(m_PluginAccessor.Instance, $"{KITSKEY}.{kit.Name}");
             }
         }
-
+        // todo: check if has permission and no cooldown
         public async Task GiveKit(IPlayer user, string name)
         {
             var hasInvertory = (IHasInventoryEntity)user;
