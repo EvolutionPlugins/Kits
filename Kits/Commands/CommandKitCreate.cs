@@ -13,6 +13,8 @@ using IHasInventory = OpenMod.Extensions.Games.Abstractions.Entities.IHasInvento
 namespace Kits.Commands
 {
     [Command("create")]
+    [CommandAlias("add")]
+    [CommandAlias("+")]
     [CommandActor(typeof(IPlayerUser))]
     [CommandParent(typeof(CommandKit))]
     [CommandSyntax("<name> [cooldown]")]
