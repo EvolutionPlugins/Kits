@@ -92,7 +92,7 @@ namespace Kits.Providers
             var hasInvertory = (IHasInventoryEntity)player.Player;
             if (hasInvertory == null)
             {
-                throw new NotSupportedException("IPlayer doesn't have compobillity IHasInventory");
+                throw new NotSupportedException("IPlayer doesn't have compatibility IHasInventory");
             }
             var kits = await GetRegisteredKitsAsync();
             if (kits == null)

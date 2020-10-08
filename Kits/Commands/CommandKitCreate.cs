@@ -54,7 +54,7 @@ namespace Kits.Commands
             var hasInventory = (IHasInventory)playerUser.Player;
             if (hasInventory == null)
             {
-                throw new NotSupportedException("IPlayer doesn't have compobillity IHasInventory");
+                throw new NotSupportedException("IPlayer doesn't have compatibility IHasInventory");
             }
             var items = hasInventory.Inventory.SelectMany(x => x.Items.Select(c => c.Item));
             if (!items.Any())
