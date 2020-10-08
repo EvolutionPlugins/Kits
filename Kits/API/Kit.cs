@@ -7,8 +7,12 @@ namespace Kits.API
     [Serializable]
     public class Kit
     {
-        public string Name;
-        public List<KitItem> Items;
-        public float Cooldown;
+        public Kit()
+        {
+        }
+
+        public string Name { get; set; }
+        public List<KitItem> Items { get; set; }
+        public float Cooldown { get; set; }
     }
 }

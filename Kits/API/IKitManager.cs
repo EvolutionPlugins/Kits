@@ -8,12 +8,12 @@ namespace Kits.API
     [Service]
     public interface IKitManager
     {
-        Task GiveKit(IPlayerUser playerUser, string name);
+        Task GiveKitAsync(IPlayerUser playerUser, string name);
 
-        Task AddKit(Kit kit);
+        Task AddKitAsync(Kit kit);
 
-        Task RemoveKit(string name);
+        Task RemoveKitAsync(string name);
 
-        Task<IReadOnlyCollection<Kit>> GetKits();
+        Task<IReadOnlyCollection<Kit>> GetRegisteredKitsAsync();
     }
 }

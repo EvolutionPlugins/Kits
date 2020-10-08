@@ -26,7 +26,7 @@ namespace Kits.Commands
             }
             var playerUser = (IPlayerUser)Context.Actor;
             var kitName = Context.Parameters[0];
-            return m_KitManager.GiveKit(playerUser, kitName);
+            return m_KitManager.GiveKitAsync(playerUser, kitName);
         }
     }
 }

@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace Kits
 {
-    public class KitsPlugin : OpenModUniversalPlugin
+    public class Kits : OpenModUniversalPlugin
     {
-        private readonly ILogger<KitsPlugin> m_Logger;
+        private readonly ILogger<Kits> m_Logger;
 
-        public KitsPlugin(ILogger<KitsPlugin> logger, IServiceProvider serviceProvider) : base(serviceProvider)
+        public Kits(ILogger<Kits> logger, IServiceProvider serviceProvider) : base(serviceProvider)
         {
             m_Logger = logger;
         }

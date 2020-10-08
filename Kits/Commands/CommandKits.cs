@@ -1,5 +1,6 @@
 ﻿using Kits.API;
 using Kits.Providers;
+using Microsoft.Extensions.Localization;
 using OpenMod.API.Permissions;
 using OpenMod.Core.Commands;
 using OpenMod.Extensions.Games.Abstractions.Players;
@@ -15,18 +16,20 @@ namespace Kits.Commands
     {
         private readonly IKitManager m_KitManager;
         private readonly IPermissionChecker m_PermissionChecker;
+        private readonly IStringLocalizer m_StringLocalizer;
 
         public CommandKits(IServiceProvider serviceProvider, IKitManager kitManager,
-            IPermissionChecker permissionChecker) : base(serviceProvider)
+            IPermissionChecker permissionChecker, IStringLocalizer stringLocalizer) : base(serviceProvider)
         {
             m_KitManager = kitManager;
             m_PermissionChecker = permissionChecker;
+            m_StringLocalizer = stringLocalizer;
         }
 
         protected override async Task OnExecuteAsync()
         {
             var playerUser = (IPlayerUser)Context.Actor;
-            var kits = await m_KitManager.GetKits();
+            var kits = await m_KitManager.GetRegisteredKitsAsync();
             var kitNames = new List<string>();
             foreach (var kit in kits)
             {
@@ -35,7 +38,7 @@ namespace Kits.Commands
                     kitNames.Add(kit.Name);
                 }
             }
-            await PrintAsync(string.Join(", ", kitNames));
+            await PrintAsync(m_StringLocalizer["commands:kits", new { KitNames = string.Join(", ", kitNames) }]);
         }
     }
 }
