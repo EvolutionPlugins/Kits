@@ -1,4 +1,5 @@
 ﻿using Kits.API;
+using Kits.Providers;
 using OpenMod.API.Permissions;
 using OpenMod.Core.Commands;
 using OpenMod.Extensions.Games.Abstractions.Players;
@@ -29,7 +30,7 @@ namespace Kits.Commands
             var kitNames = new List<string>();
             foreach (var kit in kits)
             {
-                if (await m_PermissionChecker.CheckPermissionAsync(playerUser, $"kits.{kit}") == PermissionGrantResult.Grant)
+                if (await m_PermissionChecker.CheckPermissionAsync(playerUser, $"Kits:{KitManager.KITSKEY}.{kit.Name}") == PermissionGrantResult.Grant)
                 {
                     kitNames.Add(kit.Name);
                 }

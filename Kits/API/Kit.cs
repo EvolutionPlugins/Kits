@@ -1,12 +1,14 @@
-﻿using OpenMod.Extensions.Games.Abstractions.Items;
+﻿using Kits.Models;
+using System;
 using System.Collections.Generic;
 
 namespace Kits.API
 {
+    [Serializable]
     public class Kit
     {
         public string Name;
-        public List<IItem> Items;
+        public List<KitItem> Items;
         public float Cooldown;
     }
 }

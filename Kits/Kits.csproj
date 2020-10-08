@@ -20,4 +20,8 @@
     <EmbeddedResource Include="translations.yaml" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\.editorconfig" Link=".editorconfig" />
+  </ItemGroup>
+
 </Project>

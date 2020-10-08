@@ -1,4 +1,5 @@
 ﻿using Kits.API;
+using Kits.Extensions;
 using OpenMod.API.Commands;
 using OpenMod.Core.Commands;
 using OpenMod.Extensions.Games.Abstractions.Players;
@@ -25,7 +26,7 @@ namespace Kits.Commands
         protected override async Task OnExecuteAsync()
         {
             var playerUser = (IPlayerUser)Context.Actor;
-            if (Context.Parameters.Count >= 1)
+            if (Context.Parameters.Count < 1)
             {
                 throw new CommandWrongUsageException(Context);
             }
@@ -43,7 +44,7 @@ namespace Kits.Commands
                 throw new UserFriendlyException("Kit with the same name already exists");
             }
 
-            var hasInventory = (IHasInventory)playerUser;
+            var hasInventory = (IHasInventory)playerUser.Player;
             if (hasInventory == null)
             {
                 throw new NotSupportedException("IPlayer doesn't have compobillity IHasInventory");
@@ -57,7 +58,7 @@ namespace Kits.Commands
             var kit = new Kit
             {
                 Cooldown = cooldown,
-                Items = items.ToList(),
+                Items = items.Select(x => x.ConvertIItemToKitItem()).ToList(),
                 Name = name
             };
             await m_KitManager.AddKit(kit);

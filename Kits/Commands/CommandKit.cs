@@ -20,13 +20,13 @@ namespace Kits.Commands
 
         protected override Task OnExecuteAsync()
         {
-            if(Context.Parameters.Count != 1)
+            if (Context.Parameters.Count != 1)
             {
                 throw new CommandWrongUsageException(Context);
             }
             var playerUser = (IPlayerUser)Context.Actor;
             var kitName = Context.Parameters[0];
-            return m_KitManager.GiveKit(playerUser.Player, kitName);
+            return m_KitManager.GiveKit(playerUser, kitName);
         }
     }
 }

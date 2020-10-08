@@ -8,7 +8,7 @@ namespace Kits.API
     [Service]
     public interface IKitManager
     {
-        Task GiveKit(IPlayer user, string name);
+        Task GiveKit(IPlayerUser playerUser, string name);
 
         Task AddKit(Kit kit);
 
