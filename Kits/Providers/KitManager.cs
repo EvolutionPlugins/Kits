@@ -22,6 +22,8 @@ namespace Kits.Providers
     [ServiceImplementation(Lifetime = ServiceLifetime.Singleton, Priority = Priority.Lowest)]
     public class KitManager : IKitManager
     {
+        private const string COOLDOWNKEY = "cooldown";
+
         internal const string KITSKEY = "kits";
 
         private readonly IItemSpawner m_ItemSpawner;
@@ -31,7 +33,8 @@ namespace Kits.Providers
         private readonly ILogger<KitManager> m_Logger;
 
         private IStringLocalizer m_StringLocalizer;
-        private KitsData m_Cache;
+        private KitsData m_KitCache;
+        private KitsCooldownData m_CooldownCache;
 
         public KitManager(
             IItemSpawner itemSpawner, IPluginAccessor<Kits> pluginAccessor, IPermissionRegistry permissionRegistry,
@@ -51,35 +54,38 @@ namespace Kits.Providers
             {
                 throw new ArgumentException("Kit with the same name already exists");
             }
-            m_Cache.Kits.Add(kit);
-            await m_PluginAccessor.Instance.DataStore.SaveAsync(KITSKEY, m_Cache);
+            m_KitCache.Kits.Add(kit);
+            await m_PluginAccessor.Instance.DataStore.SaveAsync(KITSKEY, m_KitCache);
             RegisterPermissions();
         }
 
         public async Task<IReadOnlyCollection<Kit>> GetRegisteredKitsAsync()
         {
-            if (m_Cache == null)
+            if (m_KitCache == null)
             {
-                await ReadKits();
+                await ReadData();
                 RegisterPermissions();
             }
-            return m_Cache.Kits;
+            return m_KitCache.Kits;
         }
 
-        private async Task ReadKits()
+        private async Task ReadData()
         {
-            m_Cache = await m_PluginAccessor.Instance.DataStore.LoadAsync<KitsData>(KITSKEY) ?? new KitsData();
+            m_KitCache = await m_PluginAccessor.Instance.DataStore.LoadAsync<KitsData>(KITSKEY)
+                         ?? new KitsData();
+            m_CooldownCache = await m_PluginAccessor.Instance.DataStore.LoadAsync<KitsCooldownData>(COOLDOWNKEY)
+                             ?? new KitsCooldownData();
         }
 
         private void RegisterPermissions()
         {
-            foreach (var kit in m_Cache.Kits)
+            foreach (var kit in m_KitCache.Kits)
             {
-                m_Logger.LogDebug($"Register permission => Kits:kits.{kit.Name}");
+                m_Logger.LogDebug($"Register permission => Kits:{KITSKEY}.{kit.Name}");
                 m_PermissionRegistry.RegisterPermission(m_PluginAccessor.Instance, $"{KITSKEY}.{kit.Name}");
             }
         }
-        // todo: check if no cooldown
+
         public async Task GiveKitAsync(IPlayerUser player, string name)
         {
             m_StringLocalizer ??= m_PluginAccessor.Instance.LifetimeScope.Resolve<IStringLocalizer>();
@@ -98,10 +104,27 @@ namespace Kits.Providers
             {
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:notFound", new { Name = name }]);
             }
+            if (m_CooldownCache.KitsCooldown.ContainsKey(player.Id)
+                && m_CooldownCache.KitsCooldown[player.Id].TryGetValue(name, out var startCooldown)
+                && (DateTime.Now - startCooldown).TotalSeconds < kit.Cooldown)
+            {
+                var cooldown = kit.Cooldown - (DateTime.Now - startCooldown).TotalSeconds;
+                throw new UserFriendlyException(m_StringLocalizer["commands:kit:cooldown", new { Kit = kit, Cooldown = cooldown }]);
+            }
             if (await m_PermissionChecker.CheckPermissionAsync(player, $"{m_PluginAccessor.Instance.OpenModComponentId}:{KITSKEY}.{name}") != PermissionGrantResult.Grant)
             {
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:noPermission", new { Kit = kit }]);
             }
+
+            if (!m_CooldownCache.KitsCooldown.ContainsKey(player.Id))
+            {
+                m_CooldownCache.KitsCooldown.Add(player.Id, new Dictionary<string, DateTime> { { kit.Name, DateTime.Now } });
+            }
+            else
+            {
+                m_CooldownCache.KitsCooldown[player.Id][kit.Name] = DateTime.Now;
+            }
+            await m_PluginAccessor.Instance.DataStore.SaveAsync(COOLDOWNKEY, m_CooldownCache);
 
             foreach (var item in kit.Items)
             {
@@ -112,9 +135,9 @@ namespace Kits.Providers
 
         public Task RemoveKitAsync(string name)
         {
-            m_Cache.Kits.RemoveAll(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+            m_KitCache.Kits.RemoveAll(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
             RegisterPermissions();
-            return m_PluginAccessor.Instance.DataStore.SaveAsync(KITSKEY, m_Cache);
+            return m_PluginAccessor.Instance.DataStore.SaveAsync(KITSKEY, m_KitCache);
         }
     }
 }
