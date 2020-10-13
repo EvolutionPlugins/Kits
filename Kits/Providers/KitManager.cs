@@ -9,6 +9,7 @@ using OpenMod.API.Ioc;
 using OpenMod.API.Permissions;
 using OpenMod.API.Plugins;
 using OpenMod.API.Prioritization;
+using OpenMod.Core.Helpers;
 using OpenMod.Extensions.Games.Abstractions.Items;
 using OpenMod.Extensions.Games.Abstractions.Players;
 using System;
@@ -20,7 +21,7 @@ using IHasInventoryEntity = OpenMod.Extensions.Games.Abstractions.Entities.IHasI
 namespace Kits.Providers
 {
     [ServiceImplementation(Lifetime = ServiceLifetime.Singleton, Priority = Priority.Lowest)]
-    public class KitManager : IKitManager
+    public class KitManager : IKitManager, IDisposable
     {
         private const string COOLDOWNKEY = "cooldown";
 
@@ -33,12 +34,13 @@ namespace Kits.Providers
         private readonly ILogger<KitManager> m_Logger;
 
         private IStringLocalizer m_StringLocalizer;
+        private IDisposable m_KitsChangeWatcher;
+        private IDisposable m_CooldownChangeWatcher;
         private KitsData m_KitCache;
         private KitsCooldownData m_CooldownCache;
 
-        public KitManager(
-            IItemSpawner itemSpawner, IPluginAccessor<Kits> pluginAccessor, IPermissionRegistry permissionRegistry,
-            IPermissionChecker permissionChecker, ILogger<KitManager> logger)
+        public KitManager(IItemSpawner itemSpawner, IPluginAccessor<Kits> pluginAccessor,
+            IPermissionRegistry permissionRegistry, IPermissionChecker permissionChecker, ILogger<KitManager> logger)
         {
             m_ItemSpawner = itemSpawner;
             m_PluginAccessor = pluginAccessor;
@@ -52,7 +54,7 @@ namespace Kits.Providers
             var kits = await GetRegisteredKitsAsync();
             if (kits.Any(x => x.Name.Equals(kit.Name, StringComparison.OrdinalIgnoreCase)))
             {
-                throw new ArgumentException("Kit with the same name already exists");
+                throw new UserFriendlyException("Kit with the same name already exists");
             }
             m_KitCache.Kits.Add(kit);
             await m_PluginAccessor.Instance.DataStore.SaveAsync(KITSKEY, m_KitCache);
@@ -65,6 +67,10 @@ namespace Kits.Providers
             {
                 await ReadData();
                 RegisterPermissions();
+                m_KitsChangeWatcher = m_PluginAccessor.Instance.DataStore.AddChangeWatcher(KITSKEY,
+                    m_PluginAccessor.Instance, () => AsyncHelper.RunSync(ReadData));
+                m_CooldownChangeWatcher = m_PluginAccessor.Instance.DataStore.AddChangeWatcher(COOLDOWNKEY,
+                    m_PluginAccessor.Instance, () => AsyncHelper.RunSync(ReadData));
             }
             return m_KitCache.Kits;
         }
@@ -74,7 +80,7 @@ namespace Kits.Providers
             m_KitCache = await m_PluginAccessor.Instance.DataStore.LoadAsync<KitsData>(KITSKEY)
                          ?? new KitsData();
             m_CooldownCache = await m_PluginAccessor.Instance.DataStore.LoadAsync<KitsCooldownData>(COOLDOWNKEY)
-                             ?? new KitsCooldownData();
+                              ?? new KitsCooldownData();
         }
 
         private void RegisterPermissions()
@@ -92,13 +98,10 @@ namespace Kits.Providers
             var hasInvertory = (IHasInventoryEntity)player.Player;
             if (hasInvertory == null)
             {
-                throw new NotSupportedException("IPlayer doesn't have compatibility IHasInventory");
+                throw new UserFriendlyException(new NotSupportedException("IPlayer doesn't have compatibility IHasInventory").Message);
             }
             var kits = await GetRegisteredKitsAsync();
-            if (kits == null)
-            {
-                return;
-            }
+
             var kit = kits.FirstOrDefault(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
             if (kit == null)
             {
@@ -111,11 +114,13 @@ namespace Kits.Providers
                 var cooldown = kit.Cooldown - (DateTime.Now - startCooldown).TotalSeconds;
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:cooldown", new { Kit = kit, Cooldown = cooldown }]);
             }
-            if (await m_PermissionChecker.CheckPermissionAsync(player, $"{m_PluginAccessor.Instance.OpenModComponentId}:{KITSKEY}.{name}") != PermissionGrantResult.Grant)
+            if (await m_PermissionChecker.CheckPermissionAsync(player, $"{m_PluginAccessor.Instance.OpenModComponentId}:{KITSKEY}.{name}")
+                != PermissionGrantResult.Grant)
             {
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:noPermission", new { Kit = kit }]);
             }
 
+            // todo: convert to users data
             if (!m_CooldownCache.KitsCooldown.ContainsKey(player.Id))
             {
                 m_CooldownCache.KitsCooldown.Add(player.Id, new Dictionary<string, DateTime> { { kit.Name, DateTime.Now } });
@@ -136,8 +141,13 @@ namespace Kits.Providers
         public Task RemoveKitAsync(string name)
         {
             m_KitCache.Kits.RemoveAll(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
-            RegisterPermissions();
             return m_PluginAccessor.Instance.DataStore.SaveAsync(KITSKEY, m_KitCache);
+        }
+
+        public void Dispose()
+        {
+            m_KitsChangeWatcher?.Dispose();
+            m_CooldownChangeWatcher?.Dispose();
         }
     }
 }
