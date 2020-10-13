@@ -23,7 +23,7 @@ namespace Kits.Commands
 
         protected override async Task OnExecuteAsync()
         {
-            if(Context.Parameters.Length != 1)
+            if (Context.Parameters.Length != 1)
             {
                 throw new CommandWrongUsageException(Context);
             }

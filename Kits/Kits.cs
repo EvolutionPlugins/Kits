@@ -22,7 +22,7 @@ namespace Kits
         {
             m_Logger.LogInformation("Made with <3 by DiFFoZ");
             m_Logger.LogInformation("https://github.com/evolutionplugins \\ https://github.com/diffoz");
-            m_Logger.LogInformation("Discord: DiFFoZ#6745");
+            m_Logger.LogInformation("Discord: DiFFoZ#6745 \\ https://discord.gg/6KymqGv");
             return Task.CompletedTask;
         }
     }
