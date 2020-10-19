@@ -47,7 +47,6 @@ namespace Kits.Commands
             var kits = await m_KitManager.GetRegisteredKitsAsync();
             if (kits.Any(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
             {
-                // todo: add custom exception ArgumentException extended by UserFriendlyException
                 throw new UserFriendlyException("Kit with the same name already exists");
             }
 

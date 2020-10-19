@@ -8,4 +8,6 @@ commands:
     create:
       noItems: "Your inventory is empty"
       success: "Succefully created kit {Kit.Name}"
-    remove: "Kit {Name} successfully removed"
+    remove: 
+      success: "Kit {Name} successfully removed"
+      fail: "Kit {Name} not found"

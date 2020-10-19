@@ -134,10 +134,15 @@ namespace Kits.Providers
             await player.PrintMessageAsync(m_StringLocalizer["commands:kit:success", new { Kit = kit }]);
         }
 
-        public Task RemoveKitAsync(string name)
+        public async Task<bool> RemoveKitAsync(string name)
         {
-            m_KitCache.Kits.RemoveAll(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
-            return m_PluginAccessor.Instance.DataStore.SaveAsync(KITSKEY, m_KitCache);
+            var removedCount = m_KitCache.Kits.RemoveAll(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+            if(removedCount > 0)
+            {
+                await m_PluginAccessor.Instance.DataStore.SaveAsync(KITSKEY, m_KitCache);
+                return true;
+            }
+            return false;
         }
 
         public void Dispose()

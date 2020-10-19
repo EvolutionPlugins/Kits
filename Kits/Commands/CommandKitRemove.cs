@@ -28,8 +28,14 @@ namespace Kits.Commands
                 throw new CommandWrongUsageException(Context);
             }
             var kitName = Context.Parameters[0];
-            await m_KitManager.RemoveKitAsync(kitName);
-            await PrintAsync(m_StringLocalizer["commands:kit:remove", new { Name = kitName }]);
+            if(await m_KitManager.RemoveKitAsync(kitName))
+            {
+                await PrintAsync(m_StringLocalizer["commands:kit:remove:success", new { Name = kitName }]);
+            }
+            else
+            {
+                await PrintAsync(m_StringLocalizer["commands:kit:remove:fail", new { Name = kitName }]);
+            }
         }
     }
 }

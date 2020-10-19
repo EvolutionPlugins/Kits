@@ -12,7 +12,7 @@ namespace Kits.API
 
         Task AddKitAsync(Kit kit);
 
-        Task RemoveKitAsync(string name);
+        Task<bool> RemoveKitAsync(string name);
 
         Task<IReadOnlyCollection<Kit>> GetRegisteredKitsAsync();
     }
