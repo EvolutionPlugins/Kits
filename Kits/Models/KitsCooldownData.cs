@@ -8,9 +8,9 @@ namespace Kits.Models
     {
         public KitsCooldownData()
         {
-            KitsCooldown = new Dictionary<string, Dictionary<string, DateTime>>();
+            KitsCooldown = new Dictionary<string, DateTime>();
         }
 
-        public Dictionary<string, Dictionary<string, DateTime>> KitsCooldown { get; set; }
+        public Dictionary<string, DateTime> KitsCooldown { get; set; }
     }
 }

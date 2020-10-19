@@ -9,6 +9,7 @@ using OpenMod.API.Ioc;
 using OpenMod.API.Permissions;
 using OpenMod.API.Plugins;
 using OpenMod.API.Prioritization;
+using OpenMod.API.Users;
 using OpenMod.Core.Helpers;
 using OpenMod.Extensions.Games.Abstractions.Items;
 using OpenMod.Extensions.Games.Abstractions.Players;
@@ -23,30 +24,32 @@ namespace Kits.Providers
     [ServiceImplementation(Lifetime = ServiceLifetime.Singleton, Priority = Priority.Lowest)]
     public class KitManager : IKitManager, IDisposable
     {
-        private const string COOLDOWNKEY = "cooldown";
-
-        internal const string KITSKEY = "kits";
+#pragma warning disable IDE1006 // Naming Styles
+        public const string COOLDOWNKEY = "cooldowns";
+        public const string KITSKEY = "kits";
+#pragma warning restore IDE1006 // Naming Styles
 
         private readonly IItemSpawner m_ItemSpawner;
         private readonly IPluginAccessor<Kits> m_PluginAccessor;
         private readonly IPermissionRegistry m_PermissionRegistry;
         private readonly IPermissionChecker m_PermissionChecker;
         private readonly ILogger<KitManager> m_Logger;
+        private readonly IUserDataStore m_UserDataStore;
 
         private IStringLocalizer m_StringLocalizer;
         private IDisposable m_KitsChangeWatcher;
-        private IDisposable m_CooldownChangeWatcher;
         private KitsData m_KitCache;
-        private KitsCooldownData m_CooldownCache;
 
         public KitManager(IItemSpawner itemSpawner, IPluginAccessor<Kits> pluginAccessor,
-            IPermissionRegistry permissionRegistry, IPermissionChecker permissionChecker, ILogger<KitManager> logger)
+            IPermissionRegistry permissionRegistry, IPermissionChecker permissionChecker, ILogger<KitManager> logger,
+            IUserDataStore userDataStore)
         {
             m_ItemSpawner = itemSpawner;
             m_PluginAccessor = pluginAccessor;
             m_PermissionRegistry = permissionRegistry;
             m_PermissionChecker = permissionChecker;
             m_Logger = logger;
+            m_UserDataStore = userDataStore;
         }
 
         public async Task AddKitAsync(Kit kit)
@@ -66,10 +69,7 @@ namespace Kits.Providers
             if (m_KitCache == null)
             {
                 await ReadData();
-                RegisterPermissions();
                 m_KitsChangeWatcher = m_PluginAccessor.Instance.DataStore.AddChangeWatcher(KITSKEY,
-                    m_PluginAccessor.Instance, () => AsyncHelper.RunSync(ReadData));
-                m_CooldownChangeWatcher = m_PluginAccessor.Instance.DataStore.AddChangeWatcher(COOLDOWNKEY,
                     m_PluginAccessor.Instance, () => AsyncHelper.RunSync(ReadData));
             }
             return m_KitCache.Kits;
@@ -79,8 +79,7 @@ namespace Kits.Providers
         {
             m_KitCache = await m_PluginAccessor.Instance.DataStore.LoadAsync<KitsData>(KITSKEY)
                          ?? new KitsData();
-            m_CooldownCache = await m_PluginAccessor.Instance.DataStore.LoadAsync<KitsCooldownData>(COOLDOWNKEY)
-                              ?? new KitsCooldownData();
+            RegisterPermissions();
         }
 
         private void RegisterPermissions()
@@ -107,33 +106,30 @@ namespace Kits.Providers
             {
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:notFound", new { Name = name }]);
             }
-            if (m_CooldownCache.KitsCooldown.ContainsKey(player.Id)
-                && m_CooldownCache.KitsCooldown[player.Id].TryGetValue(name, out var startCooldown)
-                && (DateTime.Now - startCooldown).TotalSeconds < kit.Cooldown)
-            {
-                var cooldown = kit.Cooldown - (DateTime.Now - startCooldown).TotalSeconds;
-                throw new UserFriendlyException(m_StringLocalizer["commands:kit:cooldown", new { Kit = kit, Cooldown = cooldown }]);
-            }
             if (await m_PermissionChecker.CheckPermissionAsync(player, $"{m_PluginAccessor.Instance.OpenModComponentId}:{KITSKEY}.{name}")
                 != PermissionGrantResult.Grant)
             {
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:noPermission", new { Kit = kit }]);
             }
+            var kitsCooldown = await m_UserDataStore.GetUserDataAsync<KitsCooldownData>(player.Id, player.Type, COOLDOWNKEY)
+                                ?? new KitsCooldownData();
+            if (kitsCooldown.KitsCooldown.TryGetValue(name, out var startCooldown)
+                && (DateTime.Now - startCooldown).TotalSeconds < kit.Cooldown)
+            {
+                var cooldown = Math.Round(kit.Cooldown - (DateTime.Now - startCooldown).TotalSeconds);
+                throw new UserFriendlyException(m_StringLocalizer["commands:kit:cooldown", new { Kit = kit, Cooldown = cooldown }]);
+            }
 
-            // todo: convert to users data
-            if (!m_CooldownCache.KitsCooldown.ContainsKey(player.Id))
-            {
-                m_CooldownCache.KitsCooldown.Add(player.Id, new Dictionary<string, DateTime> { { kit.Name, DateTime.Now } });
-            }
-            else
-            {
-                m_CooldownCache.KitsCooldown[player.Id][kit.Name] = DateTime.Now;
-            }
-            await m_PluginAccessor.Instance.DataStore.SaveAsync(COOLDOWNKEY, m_CooldownCache);
+            kitsCooldown.KitsCooldown[name] = DateTime.Now;
+            await m_UserDataStore.SetUserDataAsync(player.Id, player.Type, COOLDOWNKEY, kitsCooldown);
 
             foreach (var item in kit.Items)
             {
-                await m_ItemSpawner.GiveItemAsync(hasInvertory.Inventory, item.ItemAssetId, item.State);
+                var inventoryItem = await m_ItemSpawner.GiveItemAsync(hasInvertory.Inventory, item.ItemAssetId, item.State);
+                if (inventoryItem == null)
+                {
+                    m_Logger.LogWarning($"Item {item.ItemAssetId} was unable to give to player {player.DisplayName}({player.Id})");
+                }
             }
             await player.PrintMessageAsync(m_StringLocalizer["commands:kit:success", new { Kit = kit }]);
         }
@@ -147,7 +143,7 @@ namespace Kits.Providers
         public void Dispose()
         {
             m_KitsChangeWatcher?.Dispose();
-            m_CooldownChangeWatcher?.Dispose();
+            // save on dispose?
         }
     }
 }
