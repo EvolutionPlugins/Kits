@@ -111,17 +111,21 @@ namespace Kits.Providers
             {
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:noPermission", new { Kit = kit }]);
             }
-            var kitsCooldown = await m_UserDataStore.GetUserDataAsync<KitsCooldownData>(player.Id, player.Type, COOLDOWNKEY)
-                                ?? new KitsCooldownData();
-            if (kitsCooldown.KitsCooldown.TryGetValue(name, out var startCooldown)
-                && (DateTime.Now - startCooldown).TotalSeconds < kit.Cooldown)
+            if (await m_PermissionChecker.CheckPermissionAsync(player, $"{m_PluginAccessor.Instance.OpenModComponentId}:{Kits.NOCOOLDOWNKEY}")
+                != PermissionGrantResult.Grant)
             {
-                var cooldown = Math.Round(kit.Cooldown - (DateTime.Now - startCooldown).TotalSeconds);
-                throw new UserFriendlyException(m_StringLocalizer["commands:kit:cooldown", new { Kit = kit, Cooldown = cooldown }]);
-            }
+                var kitsCooldown = await m_UserDataStore.GetUserDataAsync<KitsCooldownData>(player.Id, player.Type, COOLDOWNKEY)
+                                ?? new KitsCooldownData();
+                if (kitsCooldown.KitsCooldown.TryGetValue(name, out var startCooldown)
+                    && (DateTime.Now - startCooldown).TotalSeconds < kit.Cooldown)
+                {
+                    var cooldown = Math.Round(kit.Cooldown - (DateTime.Now - startCooldown).TotalSeconds);
+                    throw new UserFriendlyException(m_StringLocalizer["commands:kit:cooldown", new { Kit = kit, Cooldown = cooldown }]);
+                }
 
-            kitsCooldown.KitsCooldown[name] = DateTime.Now;
-            await m_UserDataStore.SetUserDataAsync(player.Id, player.Type, COOLDOWNKEY, kitsCooldown);
+                kitsCooldown.KitsCooldown[name] = DateTime.Now;
+                await m_UserDataStore.SetUserDataAsync(player.Id, player.Type, COOLDOWNKEY, kitsCooldown);
+            }
 
             foreach (var item in kit.Items)
             {
