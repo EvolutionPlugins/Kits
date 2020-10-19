@@ -21,6 +21,7 @@ _Maybe is outdated so check help.md to get all permissions_
 - Kits:commands.kit.create
 - Kits:commands.kit.remove
 - Kits:commands.kits
+- Kits:nocooldown - Allows give a kit without waiting for cooldown 
 
 # How create kit
 In-game run command `/kit create <name> [cooldown]`. If you get an error `IPlayer doesn't have compatibility IHasInventory` then your game not support interacting with an inventory.
