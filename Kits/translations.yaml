@@ -5,6 +5,10 @@ commands:
     cooldown: "Kit {Kit.Name} have cooldown. Needs wait for {Cooldown} sec"
     noPermission: "You don't have permission to get a kit {Kit.Name}"
     notFound: "Kit {Name} not found"
+    noMoney: "You don't have money to get a kit {Kit.Name}. Needs at least {Money}{MoneyName}{MoneySymbol}"
+    balanceUpdateReason:
+      buy: "Buy a kit {Kit.Name}"
+      got: "Got money from kit {Kit.Name}"
     create:
       noItems: "Your inventory is empty"
       success: "Succefully created kit {Kit.Name}"

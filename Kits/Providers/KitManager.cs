@@ -11,6 +11,7 @@ using OpenMod.API.Plugins;
 using OpenMod.API.Prioritization;
 using OpenMod.API.Users;
 using OpenMod.Core.Helpers;
+using OpenMod.Extensions.Economy.Abstractions;
 using OpenMod.Extensions.Games.Abstractions.Items;
 using OpenMod.Extensions.Games.Abstractions.Players;
 using System;
@@ -35,6 +36,7 @@ namespace Kits.Providers
         private readonly IPermissionChecker m_PermissionChecker;
         private readonly ILogger<KitManager> m_Logger;
         private readonly IUserDataStore m_UserDataStore;
+        private readonly IEconomyProvider m_EconomyProvider;
 
         private IStringLocalizer m_StringLocalizer;
         private IDisposable m_KitsChangeWatcher;
@@ -42,7 +44,7 @@ namespace Kits.Providers
 
         public KitManager(IItemSpawner itemSpawner, IPluginAccessor<Kits> pluginAccessor,
             IPermissionRegistry permissionRegistry, IPermissionChecker permissionChecker, ILogger<KitManager> logger,
-            IUserDataStore userDataStore)
+            IUserDataStore userDataStore, IEconomyProvider economyProvider)
         {
             m_ItemSpawner = itemSpawner;
             m_PluginAccessor = pluginAccessor;
@@ -50,6 +52,7 @@ namespace Kits.Providers
             m_PermissionChecker = permissionChecker;
             m_Logger = logger;
             m_UserDataStore = userDataStore;
+            m_EconomyProvider = economyProvider;
         }
 
         public async Task AddKitAsync(Kit kit)
@@ -111,6 +114,13 @@ namespace Kits.Providers
             {
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:noPermission", new { Kit = kit }]);
             }
+            var balance = await m_EconomyProvider.GetBalanceAsync(player.Id, player.Type);
+            if(kit.Cost != 0 && balance < kit.Cost)
+            {
+                var money = kit.Cost - balance;
+                throw new UserFriendlyException(m_StringLocalizer["commands:kit:noMoney",
+                    new { Kit = kit, Money = money, MoneyName = m_EconomyProvider.CurrencyName, MoneySymbol = m_EconomyProvider.CurrencySymbol }]);
+            }
             if (await m_PermissionChecker.CheckPermissionAsync(player, $"{m_PluginAccessor.Instance.OpenModComponentId}:{Kits.NOCOOLDOWNKEY}")
                 != PermissionGrantResult.Grant)
             {
@@ -127,14 +137,39 @@ namespace Kits.Providers
                 await m_UserDataStore.SetUserDataAsync(player.Id, player.Type, COOLDOWNKEY, kitsCooldown);
             }
 
+            if (kit.Cost != 0)
+            {
+                await m_EconomyProvider.UpdateBalanceAsync(player.Id, player.Type, -kit.Cost,
+                    m_StringLocalizer["commans:kit:balanceUpdateReason:buy", new { Kit = kit }]);
+            }
+            if (kit.Money != 0)
+            {
+                await m_EconomyProvider.UpdateBalanceAsync(player.Id, player.Type, kit.Money,
+                    m_StringLocalizer["commans:kit:balanceUpdateReason:got", new { Kit = kit }]);
+            }
+
             foreach (var item in kit.Items)
             {
-                var inventoryItem = await m_ItemSpawner.GiveItemAsync(hasInvertory.Inventory, item.ItemAssetId, item.State);
-                if (inventoryItem == null)
+                // https://github.com/openmod/openmod/issues/225 - remove try-catch ArgumentOutOfRangeException when issue will be closed
+                try
                 {
-                    m_Logger.LogWarning($"Item {item.ItemAssetId} was unable to give to player {player.DisplayName}({player.Id})");
+                    var inventoryItem = await m_ItemSpawner.GiveItemAsync(hasInvertory.Inventory, item.ItemAssetId, item.State);
+                    if (inventoryItem == null)
+                    {
+                        m_Logger.LogError($"Item {item.ItemAssetId} was unable to give to player {player.DisplayName}({player.Id})");
+                    }
+                }
+                catch(ArgumentOutOfRangeException)
+                {
+                    // it's dropping item but it throws exception, so we catching it
+                    continue;
+                }
+                catch(Exception e)
+                {
+                    m_Logger.LogError($"Item {item.ItemAssetId} was unable to give to player {player.DisplayName}({player.Id})", e);
                 }
             }
+
             await player.PrintMessageAsync(m_StringLocalizer["commands:kit:success", new { Kit = kit }]);
         }
 
@@ -152,7 +187,6 @@ namespace Kits.Providers
         public void Dispose()
         {
             m_KitsChangeWatcher?.Dispose();
-            // save on dispose?
         }
     }
 }

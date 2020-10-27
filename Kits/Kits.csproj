@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <PackageReference Include="OpenMod.Core" Version="2.2.1" />
+    <PackageReference Include="OpenMod.Extensions.Economy.Abstractions" Version="2.2.1" />
     <PackageReference Include="OpenMod.Extensions.Games.Abstractions" Version="2.2.1" />
   </ItemGroup>
 
