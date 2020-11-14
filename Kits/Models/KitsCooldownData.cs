@@ -6,11 +6,6 @@ namespace Kits.Models
     [Serializable]
     public class KitsCooldownData
     {
-        public KitsCooldownData()
-        {
-            KitsCooldown = new Dictionary<string, DateTime>();
-        }
-
-        public Dictionary<string, DateTime> KitsCooldown { get; set; }
+        public Dictionary<string, List<KitCooldownData>> KitsCooldown { get; set; }
     }
 }

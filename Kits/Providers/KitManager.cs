@@ -7,9 +7,9 @@ using Microsoft.Extensions.Logging;
 using OpenMod.API.Commands;
 using OpenMod.API.Ioc;
 using OpenMod.API.Permissions;
+using OpenMod.API.Persistence;
 using OpenMod.API.Plugins;
 using OpenMod.API.Prioritization;
-using OpenMod.API.Users;
 using OpenMod.Core.Helpers;
 using OpenMod.Extensions.Economy.Abstractions;
 using OpenMod.Extensions.Games.Abstractions.Items;
@@ -35,23 +35,25 @@ namespace Kits.Providers
         private readonly IPermissionRegistry m_PermissionRegistry;
         private readonly IPermissionChecker m_PermissionChecker;
         private readonly ILogger<KitManager> m_Logger;
-        private readonly IUserDataStore m_UserDataStore;
         private readonly IEconomyProvider m_EconomyProvider;
 
         private IStringLocalizer m_StringLocalizer;
-        private IDisposable m_KitsChangeWatcher;
+        private IDisposable m_KitsWatcher;
+        private IDisposable m_KitsCooldownWatcher;
+        private KitsCooldownData m_KitCooldownCache;
         private KitsData m_KitCache;
+
+        private IDataStore DataStore => m_PluginAccessor.Instance.DataStore;
 
         public KitManager(IItemSpawner itemSpawner, IPluginAccessor<Kits> pluginAccessor,
             IPermissionRegistry permissionRegistry, IPermissionChecker permissionChecker, ILogger<KitManager> logger,
-            IUserDataStore userDataStore, IEconomyProvider economyProvider)
+            IEconomyProvider economyProvider)
         {
             m_ItemSpawner = itemSpawner;
             m_PluginAccessor = pluginAccessor;
             m_PermissionRegistry = permissionRegistry;
             m_PermissionChecker = permissionChecker;
             m_Logger = logger;
-            m_UserDataStore = userDataStore;
             m_EconomyProvider = economyProvider;
         }
 
@@ -63,7 +65,7 @@ namespace Kits.Providers
                 throw new UserFriendlyException("Kit with the same name already exists");
             }
             m_KitCache.Kits.Add(kit);
-            await m_PluginAccessor.Instance.DataStore.SaveAsync(KITSKEY, m_KitCache);
+            await DataStore.SaveAsync(KITSKEY, m_KitCache);
             RegisterPermissions();
         }
 
@@ -72,7 +74,9 @@ namespace Kits.Providers
             if (m_KitCache == null)
             {
                 await ReadData();
-                m_KitsChangeWatcher = m_PluginAccessor.Instance.DataStore.AddChangeWatcher(KITSKEY,
+                m_KitsWatcher = DataStore.AddChangeWatcher(KITSKEY,
+                    m_PluginAccessor.Instance, () => AsyncHelper.RunSync(ReadData));
+                m_KitsCooldownWatcher = DataStore.AddChangeWatcher(COOLDOWNKEY,
                     m_PluginAccessor.Instance, () => AsyncHelper.RunSync(ReadData));
             }
             return m_KitCache.Kits;
@@ -80,8 +84,14 @@ namespace Kits.Providers
 
         private async Task ReadData()
         {
-            m_KitCache = await m_PluginAccessor.Instance.DataStore.LoadAsync<KitsData>(KITSKEY)
-                         ?? new KitsData();
+            m_KitCache = await DataStore.LoadAsync<KitsData>(KITSKEY) ?? new KitsData
+            {
+                Kits = new List<Kit>()
+            };
+            m_KitCooldownCache = await DataStore.LoadAsync<KitsCooldownData>(COOLDOWNKEY) ?? new KitsCooldownData
+            {
+                KitsCooldown = new Dictionary<string, List<KitCooldownData>>()
+            };
             RegisterPermissions();
         }
 
@@ -104,7 +114,7 @@ namespace Kits.Providers
             }
             var kits = await GetRegisteredKitsAsync();
 
-            var kit = kits.FirstOrDefault(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+            var kit = kits.First(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
             if (kit == null)
             {
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:notFound", new { Name = name }]);
@@ -115,26 +125,55 @@ namespace Kits.Providers
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:noPermission", new { Kit = kit }]);
             }
             var balance = await m_EconomyProvider.GetBalanceAsync(player.Id, player.Type);
-            if(kit.Cost != 0 && balance < kit.Cost)
+            if (kit.Cost != 0 && balance < kit.Cost)
             {
                 var money = kit.Cost - balance;
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:noMoney",
                     new { Kit = kit, Money = money, MoneyName = m_EconomyProvider.CurrencyName, MoneySymbol = m_EconomyProvider.CurrencySymbol }]);
             }
-            if (await m_PermissionChecker.CheckPermissionAsync(player, $"{m_PluginAccessor.Instance.OpenModComponentId}:{Kits.NOCOOLDOWNKEY}")
+            if (await m_PermissionChecker.CheckPermissionAsync(player, $"{m_PluginAccessor.Instance.OpenModComponentId}:{Kits.NOCOOLDOWNPERMISSION}")
                 != PermissionGrantResult.Grant)
             {
-                var kitsCooldown = await m_UserDataStore.GetUserDataAsync<KitsCooldownData>(player.Id, player.Type, COOLDOWNKEY)
-                                ?? new KitsCooldownData();
-                if (kitsCooldown.KitsCooldown.TryGetValue(name, out var startCooldown)
-                    && (DateTime.Now - startCooldown).TotalSeconds < kit.Cooldown)
+                /*var kitsCooldown = await m_UserDataStore.GetUserDataAsync<KitsCooldownData>(player.Id, player.Type, COOLDOWNKEY)
+                                ?? new KitsCooldownData();*/
+                var kitsCooldown = m_KitCooldownCache;
+                if (kitsCooldown.KitsCooldown.TryGetValue(player.Id, out var kitPlayerCooldown))
                 {
-                    var cooldown = Math.Round(kit.Cooldown - (DateTime.Now - startCooldown).TotalSeconds);
-                    throw new UserFriendlyException(m_StringLocalizer["commands:kit:cooldown", new { Kit = kit, Cooldown = cooldown }]);
+                    var kitcooldown = kitPlayerCooldown.Find(x => x.KitName.Equals(name, StringComparison.OrdinalIgnoreCase));
+                    if (kitcooldown != null)
+                    {
+                        if ((DateTime.Now - kitcooldown.KitCooldown).TotalSeconds < kit.Cooldown)
+                        {
+                            var cooldown = Math.Round(kit.Cooldown - (DateTime.Now - kitcooldown.KitCooldown).TotalSeconds);
+                            throw new UserFriendlyException(m_StringLocalizer["commands:kit:cooldown", new { Kit = kit, Cooldown = cooldown }]);
+                        }
+                        else
+                        {
+                            kitcooldown.KitCooldown = DateTime.Now;
+                        }
+                    }
+                    else
+                    {
+                        kitcooldown = new KitCooldownData
+                        {
+                            KitName = name,
+                            KitCooldown = DateTime.Now
+                        };
+                        kitsCooldown.KitsCooldown[player.Id].Add(kitcooldown);
+                    }
                 }
-
-                kitsCooldown.KitsCooldown[name] = DateTime.Now;
-                await m_UserDataStore.SetUserDataAsync(player.Id, player.Type, COOLDOWNKEY, kitsCooldown);
+                else
+                {
+                    kitsCooldown.KitsCooldown.Add(player.Id, new List<KitCooldownData>
+                    {
+                        new KitCooldownData
+                        {
+                            KitCooldown = DateTime.Now,
+                            KitName = name
+                        }
+                    });
+                }
+                await DataStore.SaveAsync(COOLDOWNKEY, m_KitCooldownCache);
             }
 
             if (kit.Cost != 0)
@@ -159,12 +198,11 @@ namespace Kits.Providers
                         m_Logger.LogError($"Item {item.ItemAssetId} was unable to give to player {player.DisplayName}({player.Id})");
                     }
                 }
-                catch(ArgumentOutOfRangeException)
+                catch (ArgumentOutOfRangeException)
                 {
                     // it's dropping item but it throws exception, so we catching it
-                    continue;
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     m_Logger.LogError($"Item {item.ItemAssetId} was unable to give to player {player.DisplayName}({player.Id})", e);
                 }
@@ -175,10 +213,11 @@ namespace Kits.Providers
 
         public async Task<bool> RemoveKitAsync(string name)
         {
+            var kits = await GetRegisteredKitsAsync();
             var removedCount = m_KitCache.Kits.RemoveAll(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
-            if(removedCount > 0)
+            if (removedCount > 0)
             {
-                await m_PluginAccessor.Instance.DataStore.SaveAsync(KITSKEY, m_KitCache);
+                await DataStore.SaveAsync(KITSKEY, m_KitCache);
                 return true;
             }
             return false;
@@ -186,7 +225,8 @@ namespace Kits.Providers
 
         public void Dispose()
         {
-            m_KitsChangeWatcher?.Dispose();
+            m_KitsCooldownWatcher?.Dispose();
+            m_KitsWatcher?.Dispose();
         }
     }
 }

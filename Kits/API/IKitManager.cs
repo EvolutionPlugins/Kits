@@ -1,4 +1,5 @@
-﻿using OpenMod.API.Ioc;
+﻿using Kits.Models;
+using OpenMod.API.Ioc;
 using OpenMod.Extensions.Games.Abstractions.Players;
 using System.Collections.Generic;
 using System.Threading.Tasks;

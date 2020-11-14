@@ -1,5 +1,6 @@
 ﻿using Kits.API;
 using Kits.Extensions;
+using Kits.Models;
 using Microsoft.Extensions.Localization;
 using OpenMod.API.Commands;
 using OpenMod.Core.Commands;

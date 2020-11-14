@@ -10,6 +10,7 @@ namespace Kits.Commands
     [CommandAlias("-")]
     [CommandAlias("delete")]
     [CommandParent(typeof(CommandKit))]
+    [CommandSyntax("<name>")]
     public class CommandKitRemove : Command
     {
         private readonly IKitManager m_KitManager;

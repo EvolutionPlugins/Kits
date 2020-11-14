@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Kits.Commands
 {
     [Command("kit")]
-    [CommandSyntax("<create|give|remove> <name>")]
+    [CommandSyntax("[create|remove] <name>")]
     [CommandActor(typeof(IPlayerUser))]
     public class CommandKit : Command
     {

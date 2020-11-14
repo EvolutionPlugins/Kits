@@ -1,8 +1,7 @@
-﻿using Kits.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
-namespace Kits.API
+namespace Kits.Models
 {
     [Serializable]
     public class Kit
