@@ -6,7 +6,7 @@ OpenMod universal plugin. Add kits system.
 [![Discord](https://img.shields.io/discord/764502843906064434?label=Discord%20chat)](https://discord.gg/5MT2yke)
 
 ## How install\update plugin
-Run command `/openmod install DiFFoZ.Kits`
+Run command `openmod install DiFFoZ.Kits`
 
 # Commands
 _Maybe is outdated so check help.md to get all commands_
@@ -33,6 +33,5 @@ Add permission `Kits:kits.XYZ` to the role _(XYZ is a kit name)_.
 # Where kits are saving
 In plugin folder. Path `<Game_Path>/<Server_Path>/OpenMod/plugins/Kits/kits.yaml`.
 
-# This plugin is so hard to understand
-You can get support in [OpenMod discord](https://discord.gg/M7sY8cc) or in the my server 
-[![Discord](https://img.shields.io/discord/764502843906064434?label=Discord%20chat)](https://discord.gg/5MT2yke)
+# Where I can get support
+You can get support in the my [discord server](https://discord.gg/5MT2yke)
