@@ -9,16 +9,18 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 
 [assembly: PluginMetadata("Kits", DisplayName = "Kits", Author = "DiFFoZ",
-    Website = "https://github.com/DiFFoZ/Kits \\ https://discord.gg/6KymqGv")]
+    Website = "https://discord.gg/6KymqGv")]
 
 namespace Kits
 {
     public class Kits : OpenModUniversalPlugin
     {
-        public const string NOCOOLDOWNPERMISSION = "nocooldown";
+        public const string c_NoCooldownPermission = "nocooldown";
 
         private readonly ILogger<Kits> m_Logger;
         private readonly IPermissionRegistry m_PermissionRegistry;
+
+        // NOTFORGET: Remade nullable
 
         public Kits(ILogger<Kits> logger, IServiceProvider serviceProvider, IPermissionRegistry permissionRegistry) : base(serviceProvider)
         {
@@ -29,7 +31,7 @@ namespace Kits
         protected override async Task OnLoadAsync()
         {
             // Kits:nocooldown
-            m_PermissionRegistry.RegisterPermission(this, NOCOOLDOWNPERMISSION, "Allows use kit without waiting for cooldown");
+            m_PermissionRegistry.RegisterPermission(this, c_NoCooldownPermission, "Allows use kit without waiting for cooldown");
             m_Logger.LogInformation("Made with <3 by DiFFoZ");
             m_Logger.LogInformation("https://github.com/evolutionplugins \\ https://github.com/diffoz");
             m_Logger.LogInformation("Discord: DiFFoZ#6745 \\ https://discord.gg/6KymqGv");

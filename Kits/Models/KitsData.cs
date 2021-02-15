@@ -6,6 +6,6 @@ namespace Kits.Models
     [Serializable]
     public class KitsData
     {
-        public List<Kit> Kits { get; set; }
+        public List<Kit>? Kits { get; set; }
     }
 }

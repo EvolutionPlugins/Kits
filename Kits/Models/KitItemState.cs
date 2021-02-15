@@ -6,16 +6,16 @@ namespace Kits.Models
     [Serializable]
     public class KitItemState : IItemState
     {
-        public KitItemState()
+        public KitItemState() : this(null!)
         {
         }
 
         public KitItemState(IItemState itemState)
         {
-            ItemAmount = itemState.ItemAmount;
-            ItemDurability = itemState.ItemDurability;
-            ItemQuality = itemState.ItemQuality;
-            StateData = itemState.StateData;
+            ItemAmount = itemState?.ItemAmount ?? 0;
+            ItemDurability = itemState?.ItemDurability ?? 0;
+            ItemQuality = itemState?.ItemQuality ?? 0;
+            StateData = itemState?.StateData ?? Array.Empty<byte>();
         }
 
         public double ItemQuality { get; set; }

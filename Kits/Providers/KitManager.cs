@@ -18,7 +18,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using IHasInventoryEntity = OpenMod.Extensions.Games.Abstractions.Entities.IHasInventory;
 
 namespace Kits.Providers
 {
@@ -37,13 +36,14 @@ namespace Kits.Providers
         private readonly ILogger<KitManager> m_Logger;
         private readonly IEconomyProvider m_EconomyProvider;
 
-        private IStringLocalizer m_StringLocalizer;
-        private IDisposable m_KitsWatcher;
-        private IDisposable m_KitsCooldownWatcher;
-        private KitsCooldownData m_KitCooldownCache;
-        private KitsData m_KitCache;
+        // make compiler happy
+        private IStringLocalizer m_StringLocalizer = null!;
+        private IDisposable m_KitsWatcher = null!;
+        private IDisposable m_KitsCooldownWatcher = null!;
+        private KitsCooldownData m_KitCooldownCache = null!;
+        private KitsData m_KitCache = null!;
 
-        private IDataStore DataStore => m_PluginAccessor.Instance.DataStore;
+        private IDataStore DataStore => m_PluginAccessor.Instance!.DataStore;
 
         public KitManager(IItemSpawner itemSpawner, IPluginAccessor<Kits> pluginAccessor,
             IPermissionRegistry permissionRegistry, IPermissionChecker permissionChecker, ILogger<KitManager> logger,
@@ -60,11 +60,11 @@ namespace Kits.Providers
         public async Task AddKitAsync(Kit kit)
         {
             var kits = await GetRegisteredKitsAsync();
-            if (kits.Any(x => x.Name.Equals(kit.Name, StringComparison.OrdinalIgnoreCase)))
+            if (kits.Any(x => x.Name?.Equals(kit.Name, StringComparison.OrdinalIgnoreCase) ?? false))
             {
                 throw new UserFriendlyException("Kit with the same name already exists");
             }
-            m_KitCache.Kits.Add(kit);
+            m_KitCache.Kits?.Add(kit);
             await DataStore.SaveAsync(KITSKEY, m_KitCache);
             RegisterPermissions();
         }
@@ -75,11 +75,11 @@ namespace Kits.Providers
             {
                 await ReadData();
                 m_KitsWatcher = DataStore.AddChangeWatcher(KITSKEY,
-                    m_PluginAccessor.Instance, () => AsyncHelper.RunSync(ReadData));
+                    m_PluginAccessor.Instance!, () => AsyncHelper.RunSync(ReadData));
                 m_KitsCooldownWatcher = DataStore.AddChangeWatcher(COOLDOWNKEY,
                     m_PluginAccessor.Instance, () => AsyncHelper.RunSync(ReadData));
             }
-            return m_KitCache.Kits;
+            return m_KitCache!.Kits!;
         }
 
         private async Task ReadData()
@@ -97,29 +97,29 @@ namespace Kits.Providers
 
         private void RegisterPermissions()
         {
-            foreach (var kit in m_KitCache.Kits)
+            foreach (var kit in m_KitCache!.Kits!)
             {
                 m_Logger.LogDebug($"Register permission => Kits:{KITSKEY}.{kit.Name}");
-                m_PermissionRegistry.RegisterPermission(m_PluginAccessor.Instance, $"{KITSKEY}.{kit.Name}");
+                m_PermissionRegistry.RegisterPermission(m_PluginAccessor.Instance!, $"{KITSKEY}.{kit.Name}");
             }
         }
 
         public async Task GiveKitAsync(IPlayerUser player, string name)
         {
-            m_StringLocalizer ??= m_PluginAccessor.Instance.LifetimeScope.Resolve<IStringLocalizer>();
-            var hasInvertory = (IHasInventoryEntity)player.Player;
+            m_StringLocalizer ??= m_PluginAccessor.Instance!.LifetimeScope.Resolve<IStringLocalizer>();
+            var hasInvertory = (IHasInventory)player.Player;
             if (hasInvertory == null)
             {
                 throw new UserFriendlyException(new NotSupportedException("IPlayer doesn't have compatibility IHasInventory").Message);
             }
             var kits = await GetRegisteredKitsAsync();
 
-            var kit = kits.First(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+            var kit = kits.First(c => c.Name?.Equals(name, StringComparison.OrdinalIgnoreCase) ?? false);
             if (kit == null)
             {
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:notFound", new { Name = name }]);
             }
-            if (await m_PermissionChecker.CheckPermissionAsync(player, $"{m_PluginAccessor.Instance.OpenModComponentId}:{KITSKEY}.{name}")
+            if (await m_PermissionChecker.CheckPermissionAsync(player, $"{m_PluginAccessor.Instance!.OpenModComponentId}:{KITSKEY}.{name}")
                 != PermissionGrantResult.Grant)
             {
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:noPermission", new { Kit = kit }]);
@@ -131,15 +131,15 @@ namespace Kits.Providers
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:noMoney",
                     new { Kit = kit, Money = money, MoneyName = m_EconomyProvider.CurrencyName, MoneySymbol = m_EconomyProvider.CurrencySymbol }]);
             }
-            if (await m_PermissionChecker.CheckPermissionAsync(player, $"{m_PluginAccessor.Instance.OpenModComponentId}:{Kits.NOCOOLDOWNPERMISSION}")
+            if (await m_PermissionChecker.CheckPermissionAsync(player, $"{m_PluginAccessor.Instance.OpenModComponentId}:{Kits.c_NoCooldownPermission}")
                 != PermissionGrantResult.Grant)
             {
                 /*var kitsCooldown = await m_UserDataStore.GetUserDataAsync<KitsCooldownData>(player.Id, player.Type, COOLDOWNKEY)
                                 ?? new KitsCooldownData();*/
                 var kitsCooldown = m_KitCooldownCache;
-                if (kitsCooldown.KitsCooldown.TryGetValue(player.Id, out var kitPlayerCooldown))
+                if (kitsCooldown.KitsCooldown!.TryGetValue(player.Id, out var kitPlayerCooldown))
                 {
-                    var kitcooldown = kitPlayerCooldown.Find(x => x.KitName.Equals(name, StringComparison.OrdinalIgnoreCase));
+                    var kitcooldown = kitPlayerCooldown!.Find(x => x.KitName?.Equals(name, StringComparison.OrdinalIgnoreCase) ?? false);
                     if (kitcooldown != null)
                     {
                         if ((DateTime.Now - kitcooldown.KitCooldown).TotalSeconds < kit.Cooldown)
@@ -164,7 +164,7 @@ namespace Kits.Providers
                 }
                 else
                 {
-                    kitsCooldown.KitsCooldown.Add(player.Id, new List<KitCooldownData>
+                    kitsCooldown.KitsCooldown!.Add(player.Id, new List<KitCooldownData>
                     {
                         new KitCooldownData
                         {
@@ -187,12 +187,12 @@ namespace Kits.Providers
                     m_StringLocalizer["commans:kit:balanceUpdateReason:got", new { Kit = kit }]);
             }
 
-            foreach (var item in kit.Items)
+            foreach (var item in kit.Items!)
             {
                 // https://github.com/openmod/openmod/issues/225 - remove try-catch ArgumentOutOfRangeException when issue will be closed
                 try
                 {
-                    var inventoryItem = await m_ItemSpawner.GiveItemAsync(hasInvertory.Inventory, item.ItemAssetId, item.State);
+                    var inventoryItem = await m_ItemSpawner.GiveItemAsync(hasInvertory.Inventory!, item.ItemAssetId, item.State);
                     if (inventoryItem == null)
                     {
                         m_Logger.LogError($"Item {item.ItemAssetId} was unable to give to player {player.DisplayName}({player.Id})");
@@ -214,7 +214,7 @@ namespace Kits.Providers
         public async Task<bool> RemoveKitAsync(string name)
         {
             var kits = await GetRegisteredKitsAsync();
-            var removedCount = m_KitCache.Kits.RemoveAll(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+            var removedCount = m_KitCache.Kits!.RemoveAll(c => c.Name!.Equals(name, StringComparison.OrdinalIgnoreCase));
             if (removedCount > 0)
             {
                 await DataStore.SaveAsync(KITSKEY, m_KitCache);

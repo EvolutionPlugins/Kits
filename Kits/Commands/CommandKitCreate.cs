@@ -4,12 +4,12 @@ using Kits.Models;
 using Microsoft.Extensions.Localization;
 using OpenMod.API.Commands;
 using OpenMod.Core.Commands;
+using OpenMod.Extensions.Games.Abstractions.Items;
 using OpenMod.Extensions.Games.Abstractions.Players;
 using System;
 using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
-using IHasInventory = OpenMod.Extensions.Games.Abstractions.Entities.IHasInventory;
 
 namespace Kits.Commands
 {
@@ -46,7 +46,7 @@ namespace Kits.Commands
             }
 
             var kits = await m_KitManager.GetRegisteredKitsAsync();
-            if (kits.Any(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+            if (kits.Any(x => x.Name?.Equals(name, StringComparison.OrdinalIgnoreCase) ?? false))
             {
                 throw new UserFriendlyException("Kit with the same name already exists");
             }
@@ -54,7 +54,7 @@ namespace Kits.Commands
             var hasInventory = (IHasInventory)playerUser.Player;
             if (hasInventory == null)
             {
-                throw new NotSupportedException("IPlayer doesn't have compatibility IHasInventory");
+                throw new UserFriendlyException("IPlayer doesn't have compatibility IHasInventory");
             }
             var items = hasInventory.Inventory.SelectMany(x => x.Items.Select(c => c.Item));
             if (!items.Any())

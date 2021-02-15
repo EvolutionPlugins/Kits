@@ -6,13 +6,13 @@ namespace Kits.Models
     [Serializable]
     public class KitItem
     {
-        public KitItem()
+        public KitItem() : this(null!, null!)
         {
         }
 
         public KitItem(string itemAssetId, IItemState itemState)
         {
-            ItemAssetId = itemAssetId;
+            ItemAssetId = itemAssetId ?? string.Empty;
             State = new KitItemState(itemState);
         }
 

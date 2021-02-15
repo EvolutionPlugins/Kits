@@ -33,7 +33,7 @@ namespace Kits.Commands
             var kitNames = new List<string>();
             foreach (var kit in kits)
             {
-                if (await m_PermissionChecker.CheckPermissionAsync(playerUser, $"Kits:{KitManager.KITSKEY}.{kit.Name}")
+                if (kit.Name != null && await m_PermissionChecker.CheckPermissionAsync(playerUser, $"Kits:{KitManager.KITSKEY}.{kit.Name}")
                     == PermissionGrantResult.Grant)
                 {
                     kitNames.Add(kit.Name);
