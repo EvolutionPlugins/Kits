@@ -1,9 +1,8 @@
 ﻿using OpenMod.Extensions.Games.Abstractions.Items;
 using System;
 
-namespace Kits.Models
+namespace Kits.API
 {
-    [Serializable]
     public class KitItemState : IItemState
     {
         public KitItemState() : this(null!)
@@ -24,8 +23,6 @@ namespace Kits.Models
 
         public double ItemAmount { get; set; }
 
-#pragma warning disable CA1819 // Properties should not return arrays
         public byte[] StateData { get; set; }
-#pragma warning restore CA1819 // Properties should not return arrays
     }
 }

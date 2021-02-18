@@ -1,9 +1,9 @@
-﻿using Kits.Models;
+﻿using Kits.API;
 using OpenMod.Extensions.Games.Abstractions.Items;
 
 namespace Kits.Extensions
 {
-    public static class ConvertorExtension
+    internal static class ConvertorExtension
     {
         public static KitItem ConvertIItemToKitItem(this IItem item)
         {

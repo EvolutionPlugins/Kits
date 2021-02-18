@@ -1,13 +1,11 @@
 ﻿using Kits.API;
 using Kits.Extensions;
-using Kits.Models;
 using Microsoft.Extensions.Localization;
 using OpenMod.API.Commands;
 using OpenMod.Core.Commands;
 using OpenMod.Extensions.Games.Abstractions.Items;
 using OpenMod.Extensions.Games.Abstractions.Players;
 using System;
-using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -21,31 +19,33 @@ namespace Kits.Commands
     [CommandSyntax("<name> [cooldown]")]
     public class CommandKitCreate : Command
     {
-        private readonly IKitManager m_KitManager;
+        private readonly IKitStore m_KitStore;
         private readonly IStringLocalizer m_StringLocalizer;
 
-        public CommandKitCreate(IServiceProvider serviceProvider, IKitManager kitManager,
+        public CommandKitCreate(IServiceProvider serviceProvider, IKitStore kitStore,
             IStringLocalizer stringLocalizer) : base(serviceProvider)
         {
-            m_KitManager = kitManager;
+            m_KitStore = kitStore;
             m_StringLocalizer = stringLocalizer;
         }
 
         protected override async Task OnExecuteAsync()
         {
-            var playerUser = (IPlayerUser)Context.Actor;
             if (Context.Parameters.Count < 1)
             {
                 throw new CommandWrongUsageException(Context);
             }
+
+            var playerUser = (IPlayerUser)Context.Actor;
             var name = Context.Parameters[0];
-            float cooldown = 0;
+
+            TimeSpan cooldown = TimeSpan.Zero;
             if (Context.Parameters.Count > 1)
             {
-                cooldown = await Context.Parameters.GetAsync<float>(1);
+                cooldown = await Context.Parameters.GetAsync<TimeSpan>(1);
             }
 
-            var kits = await m_KitManager.GetRegisteredKitsAsync();
+            var kits = await m_KitStore.GetKits();
             if (kits.Any(x => x.Name?.Equals(name, StringComparison.OrdinalIgnoreCase) ?? false))
             {
                 throw new UserFriendlyException("Kit with the same name already exists");
@@ -56,19 +56,20 @@ namespace Kits.Commands
             {
                 throw new UserFriendlyException("IPlayer doesn't have compatibility IHasInventory");
             }
+
             var items = hasInventory.Inventory.SelectMany(x => x.Items.Select(c => c.Item));
             if (!items.Any())
             {
-                await PrintAsync(m_StringLocalizer["commands:kit:create:noItems"], Color.Red);
-                return;
+                throw new UserFriendlyException(m_StringLocalizer["commands:kit:create:noItems"]);
             }
+
             var kit = new Kit
             {
-                Cooldown = cooldown,
+                Cooldown = (float)cooldown.TotalSeconds,
                 Items = items.Select(x => x.ConvertIItemToKitItem()).ToList(),
                 Name = name
             };
-            await m_KitManager.AddKitAsync(kit);
+            await m_KitStore.AddKit(kit);
             await PrintAsync(m_StringLocalizer["commands:kit:create:success", new { Kit = kit }]);
         }
     }

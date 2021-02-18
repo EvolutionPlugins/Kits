@@ -1,9 +1,7 @@
 ﻿using OpenMod.Extensions.Games.Abstractions.Items;
-using System;
 
-namespace Kits.Models
+namespace Kits.API
 {
-    [Serializable]
     public class KitItem
     {
         public KitItem() : this(null!, null!)
