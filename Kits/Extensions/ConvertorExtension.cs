@@ -7,7 +7,7 @@ namespace Kits.Extensions
     {
         public static KitItem ConvertIItemToKitItem(this IItem item)
         {
-            return new KitItem(item.Asset.ItemAssetId, item.State);
+            return new(item.Asset.ItemAssetId, item.State);
         }
     }
 }
