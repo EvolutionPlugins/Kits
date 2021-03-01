@@ -24,7 +24,7 @@ namespace Kits.Databases
                 await m_MySqlConnection.OpenAsync();
                 await using var command = m_MySqlConnection.CreateCommand();
 
-                command.CommandText = $"SHOW TABLES LIKE `{TableName}`;";
+                command.CommandText = $"SHOW TABLES LIKE '{TableName}';";
 
                 if (await command.ExecuteScalarAsync() != null)
                 {
