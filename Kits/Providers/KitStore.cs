@@ -1,15 +1,14 @@
 ﻿using Kits.API;
+using Kits.Databases;
 using Kits.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
-using OpenMod.API.Commands;
 using OpenMod.API.Ioc;
 using OpenMod.API.Permissions;
 using OpenMod.API.Persistence;
 using OpenMod.Core.Helpers;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Kits.Providers
@@ -23,6 +22,7 @@ namespace Kits.Providers
         private readonly IPermissionRegistry m_PermissionRegistry;
         private readonly IStringLocalizer m_StringLocalizer;
         private readonly IDataStore m_DataStore;
+        private readonly IKitDatabase m_Database;
 
         private KitsData m_KitsData = null!;
         private IDisposable m_FileWatcher = null!;
@@ -33,42 +33,63 @@ namespace Kits.Providers
             m_PermissionRegistry = permissionRegistry;
             m_StringLocalizer = stringLocalizer;
             m_DataStore = plugin.DataStore;
+            m_Database = plugin.Configuration["database:connectionType"].ToLower() switch
+            {
+                "mysql" => new MySQLKitDatabase(plugin),
+                _ => throw new Exception()
+            };
+            AsyncHelper.RunSync(m_Database.LoadDatabaseAsync);
+            AsyncHelper.RunSync(RegisterPermissionsAsync);
         }
 
-        public async Task<IReadOnlyCollection<Kit>> GetKits()
+        public Task<IReadOnlyCollection<Kit>> GetKits()
         {
-            await EnsureDataLoaded();
-            return m_KitsData.Kits!;
+            return m_Database.GetKitsAsync();
+            //await EnsureDataLoaded();
+            //return m_KitsData.Kits!;
         }
 
         public async Task AddKit(Kit kit)
         {
-            await EnsureDataLoaded();
-            if (m_KitsData.Kits!.Any(x => x.Name?.Equals(kit.Name, StringComparison.OrdinalIgnoreCase) ?? false))
+            if (await m_Database.AddKitAsync(kit) && !string.IsNullOrEmpty(kit.Name))
             {
-                throw new UserFriendlyException("Kit with the same name already exists");
+                RegisterPermission(kit.Name!);
             }
-            m_KitsData.Kits!.Add(kit);
-            await SaveData();
+
+            //await EnsureDataLoaded();
+            //if (m_KitsData.Kits!.Any(x => x.Name?.Equals(kit.Name, StringComparison.OrdinalIgnoreCase) ?? false))
+            //{
+            //    throw new UserFriendlyException("Kit with the same name already exists");
+            //}
+            //m_KitsData.Kits!.Add(kit);
+            //await SaveData();
         }
 
         public async Task<Kit?> GetKit(string kitName)
         {
-            await EnsureDataLoaded();
-            return m_KitsData.Kits!.Find(x => x.Name?.Equals(kitName, StringComparison.OrdinalIgnoreCase) ?? false);
+            var kit = await m_Database.GetKitAsync(kitName);
+            if(kit?.Name is not null)
+            {
+                RegisterPermission(kit.Name);
+            }
+            return kit;
+            //await EnsureDataLoaded();
+            //return m_KitsData.Kits!.Find(x => x.Name?.Equals(kitName, StringComparison.OrdinalIgnoreCase) ?? false);
         }
 
-        public async Task RemoveKit(string kitName)
+        public Task RemoveKit(string kitName)
         {
-            await EnsureDataLoaded();
-            var index = m_KitsData.Kits!.FindIndex(x => x.Name?.Equals(kitName, StringComparison.OrdinalIgnoreCase) ?? false);
-            if (index < 0)
-            {
-                throw new UserFriendlyException(m_StringLocalizer["commands:kit:remove:fail", new { Name = kitName }]);
-            }
+            return m_Database.RemoveKitAsync(kitName);
 
-            m_KitsData.Kits.RemoveAt(index);
-            await SaveData();
+            //await EnsureDataLoaded();
+            //var index = m_KitsData.Kits!.FindIndex(x => x.Name?.Equals(kitName, StringComparison.OrdinalIgnoreCase) ?? false);
+            //if (index < 0)
+            //{
+            //    throw new UserFriendlyException(m_StringLocalizer["commands:kit:remove:fail", new { Name = kitName }]);
+            //}
+
+            //m_KitsData.Kits.RemoveAt(index);
+            //await SaveData();
         }
 
         private async Task EnsureDataLoaded()
@@ -83,15 +104,20 @@ namespace Kits.Providers
             }
         }
 
-        private void RegisterPermissions()
+        private async Task RegisterPermissionsAsync()
         {
-            foreach (var kit in m_KitsData.Kits!)
+            foreach (var kit in await m_Database.GetKitsAsync())
             {
                 if (kit.Name != null)
                 {
-                    m_PermissionRegistry.RegisterPermission(m_Plugin, kit.Name);
+                    RegisterPermission(kit.Name);
                 }
             }
+        }
+
+        private void RegisterPermission(string permission)
+        {
+            m_PermissionRegistry.RegisterPermission(m_Plugin, permission);
         }
 
         private async Task LoadData()
@@ -105,7 +131,7 @@ namespace Kits.Providers
                 m_KitsData = new() { Kits = new() };
                 await SaveData();
             }
-            RegisterPermissions();
+
         }
 
         private Task SaveData()

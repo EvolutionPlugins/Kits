@@ -27,12 +27,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="config.yaml" />
+    <None Remove="packages.yaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="1.1.1" />
+    <PackageReference Include="MySqlConnector" Version="1.2.1" />
     <PackageReference Include="OpenMod.Core" Version="3.0.17" />
     <PackageReference Include="OpenMod.Extensions.Economy.Abstractions" Version="3.0.17" />
     <PackageReference Include="OpenMod.Extensions.Games.Abstractions" Version="3.0.17" />
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="config.yaml" />
+    <EmbeddedResource Include="packages.yaml" />
     <EmbeddedResource Include="translations.yaml" />
   </ItemGroup>
 

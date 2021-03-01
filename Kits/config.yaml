@@ -1,0 +1,4 @@
+﻿database:
+  connection: "Server=127.0.0.1;Database=unturned;Uid=root;Pwd=root;"
+  connectionType: "mysql"
+  connectionTableName: "Kits"

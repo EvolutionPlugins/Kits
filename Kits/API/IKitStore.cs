@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using OpenMod.API.Ioc;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Kits.API
 {
+    [Service]
     public interface IKitStore
     {
         Task<IReadOnlyCollection<Kit>> GetKits();

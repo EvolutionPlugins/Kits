@@ -50,9 +50,9 @@ namespace Kits.Providers
                 throw new UserFriendlyException("IPlayer doesn't have compatibility IHasInventory");
             }
 
-            var kits = await m_KitStore.GetKits();
+            //var kits = await m_KitStore.GetKits();
 
-            var kit = kits.First(c => c.Name?.Equals(name, StringComparison.OrdinalIgnoreCase) ?? false);
+            var kit = await m_KitStore.GetKit(name);
             if (kit == null)
             {
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:notFound", new { Name = name }]);
@@ -69,7 +69,7 @@ namespace Kits.Providers
                 if (cooldown.Value.TotalSeconds < kit.Cooldown)
                 {
                     var cooldownTime = Math.Round(kit.Cooldown - cooldown.Value.TotalSeconds);
-                    throw new UserFriendlyException(m_StringLocalizer["commands:kit:cooldown", new { Kit = kit, Cooldown = cooldown }]);
+                    throw new UserFriendlyException(m_StringLocalizer["commands:kit:cooldown", new { Kit = kit, Cooldown = cooldownTime }]);
                 }
                 else
                 {
