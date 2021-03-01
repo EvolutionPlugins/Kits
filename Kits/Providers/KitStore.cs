@@ -36,6 +36,7 @@ namespace Kits.Providers
             m_Database = plugin.Configuration["database:connectionType"].ToLower() switch
             {
                 "mysql" => new MySQLKitDatabase(plugin),
+                "datastore" => new DataStoreKitDatabase(plugin),
                 _ => throw new Exception()
             };
             AsyncHelper.RunSync(m_Database.LoadDatabaseAsync);
@@ -146,6 +147,7 @@ namespace Kits.Providers
         public void Dispose()
         {
             m_FileWatcher?.Dispose();
+            (m_Database as IDisposable)?.Dispose();
         }
     }
 }
