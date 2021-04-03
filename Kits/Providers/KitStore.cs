@@ -137,11 +137,7 @@ namespace Kits.Providers
 
         private Task SaveData()
         {
-            if (m_KitsData == null)
-            {
-                return Task.CompletedTask;
-            }
-            return m_DataStore.SaveAsync(c_KitsKey, m_KitsData);
+            return m_KitsData == null ? Task.CompletedTask : m_DataStore.SaveAsync(c_KitsKey, m_KitsData);
         }
 
         public void Dispose()

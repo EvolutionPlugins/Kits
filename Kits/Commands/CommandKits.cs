@@ -15,7 +15,8 @@ namespace Kits.Commands
         private readonly IKitManager m_KitManager;
         private readonly IStringLocalizer m_StringLocalizer;
 
-        public CommandKits(IServiceProvider serviceProvider, IKitManager kitManager, IStringLocalizer stringLocalizer) : base(serviceProvider)
+        public CommandKits(IServiceProvider serviceProvider, IKitManager kitManager, IStringLocalizer stringLocalizer) :
+            base(serviceProvider)
         {
             m_KitManager = kitManager;
             m_StringLocalizer = stringLocalizer;
@@ -27,7 +28,8 @@ namespace Kits.Commands
 
             await PrintAsync(m_StringLocalizer["commands:kits", new
             {
-                KitNames = string.Join(", ", (await m_KitManager.GetAvailablePlayerKits(playerUser)).Select(x => x.Name))
+                KitNames = string.Join(", ",
+                    (await m_KitManager.GetAvailablePlayerKits(playerUser)).Select(x => x.Name))
             }]);
         }
     }

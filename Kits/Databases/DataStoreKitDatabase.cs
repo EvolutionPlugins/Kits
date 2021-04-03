@@ -11,7 +11,7 @@ namespace Kits.Databases
 {
     public class DataStoreKitDatabase : KitDatabaseCore, IKitDatabase, IDisposable
     {
-        public const string c_KitsKey = "kits";
+        private const string c_KitsKey = "kits";
 
         private KitsData m_Data = null!;
         private IDisposable m_FileWatcher = null!;
@@ -55,10 +55,8 @@ namespace Kits.Databases
                 m_Data = new() { Kits = new() };
             }
 
-            if (m_FileWatcher == null)
-            {
-                m_FileWatcher = Plugin.DataStore.AddChangeWatcher(c_KitsKey, Plugin, () => AsyncHelper.RunSync(LoadDatabaseAsync));
-            }
+            m_FileWatcher ??= Plugin.DataStore.AddChangeWatcher(c_KitsKey, Plugin,
+                () => AsyncHelper.RunSync(LoadDatabaseAsync));
         }
 
         public async Task<bool> RemoveKitAsync(string name)

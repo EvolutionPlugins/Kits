@@ -66,7 +66,8 @@ namespace Kits.Databases
 
                 var bytes = kit.Items?.ConvertToByteArray() ?? Array.Empty<byte>();
 
-                command.CommandText = $"INSERT INTO `{TableName}` (`Name`, `Cooldown`, `Cost`, `Money`, `Items`) VALUES (@a, @b, @c, @d, @e);";
+                command.CommandText =
+                    $"INSERT INTO `{TableName}` (`Name`, `Cooldown`, `Cost`, `Money`, `Items`) VALUES (@a, @b, @c, @d, @e);";
                 command.Parameters.AddWithValue("a", kit.Name);
                 command.Parameters.AddWithValue("b", kit.Cooldown);
                 command.Parameters.AddWithValue("c", kit.Cost);
@@ -217,7 +218,8 @@ namespace Kits.Databases
 
                 var bytes = kit.Items?.ConvertToByteArray() ?? Array.Empty<byte>();
 
-                command.CommandText = $"UPDATE `{TableName}` SET `Cooldown`=@a, `Cost`=@b, `Money`=@c, `Items`=@d WHERE `Name` = @n;";
+                command.CommandText =
+                    $"UPDATE `{TableName}` SET `Cooldown`=@a, `Cost`=@b, `Money`=@c, `Items`=@d WHERE `Name` = @n;";
                 command.Parameters.AddWithValue("a", kit.Cooldown);
                 command.Parameters.AddWithValue("b", kit.Cost);
                 command.Parameters.AddWithValue("c", kit.Money);
@@ -226,12 +228,13 @@ namespace Kits.Databases
 
                 var i = await command.ExecuteNonQueryAsync();
                 Console.WriteLine(i);
-                if (i == 0)
+                if (i != 0)
                 {
-                    await m_MySqlConnection.CloseAsync();
-                    return await AddKitAsync(kit);
+                    return true;
                 }
-                return true;
+
+                await m_MySqlConnection.CloseAsync();
+                return await AddKitAsync(kit);
             }
             finally
             {

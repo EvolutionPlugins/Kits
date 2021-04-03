@@ -21,12 +21,11 @@ namespace Kits.Providers
         private readonly Kits m_Plugin;
         private readonly IPermissionRegistry m_PermissionRegistry;
 
-        private KitsCooldownData m_KitsCooldownData;
+        private KitsCooldownData m_KitsCooldownData = null!;
         private IDisposable m_FileWatcher = null!;
 
         public KitCooldownStore(Kits plugin, IPermissionRegistry permissionRegistry)
         {
-            m_KitsCooldownData = new();
             m_DataStore = plugin.DataStore;
             m_Plugin = plugin;
             m_PermissionRegistry = permissionRegistry;
@@ -37,16 +36,17 @@ namespace Kits.Providers
         public async Task<TimeSpan?> GetLastCooldown(IPlayerUser player, string kitName)
         {
             await EnsureDataLoaded();
-            if (m_KitsCooldownData.KitsCooldown!.TryGetValue(player.Id, out var kitCooldowns))
+            if (!m_KitsCooldownData.KitsCooldown!.TryGetValue(player.Id, out var kitCooldowns))
             {
-                var kitCooldown = kitCooldowns.Find(x => x.KitName == kitName);
-                if (kitCooldown == null)
-                {
-                    return null;
-                }
-                return DateTime.Now - kitCooldown.KitCooldown;
+                return null;
             }
-            return null;
+
+            var kitCooldown = kitCooldowns.Find(x => x.KitName == kitName);
+            if (kitCooldown == null)
+            {
+                return null;
+            }
+            return DateTime.Now - kitCooldown.KitCooldown;
         }
 
         public async Task RegisterCooldown(IPlayerUser player, string kitName, DateTime time)
@@ -55,12 +55,13 @@ namespace Kits.Providers
             if (m_KitsCooldownData.KitsCooldown!.TryGetValue(player.Id, out var kitCooldowns))
             {
                 var kitCooldown = kitCooldowns.Find(x => x.KitName == kitName)
-                    ?? (KitCooldownData?)(new() { KitName = kitName, KitCooldown = time });
+                    ?? new() { KitName = kitName, KitCooldown = time };
                 kitCooldown.KitCooldown = time;
             }
             else
             {
-                m_KitsCooldownData.KitsCooldown.Add(player.Id, new() { new() { KitCooldown = time, KitName = kitName } });
+                m_KitsCooldownData.KitsCooldown.Add(player.Id, new()
+                    { new() { KitCooldown = time, KitName = kitName } });
             }
             await SaveData();
         }
@@ -70,10 +71,8 @@ namespace Kits.Providers
             if (m_KitsCooldownData == null)
             {
                 await LoadData();
-                if (m_FileWatcher == null)
-                {
-                    m_FileWatcher = m_DataStore.AddChangeWatcher(c_CooldownKey, m_Plugin, () => AsyncHelper.RunSync(LoadData));
-                }
+                m_FileWatcher ??= m_DataStore.AddChangeWatcher(c_CooldownKey, m_Plugin,
+                    () => AsyncHelper.RunSync(LoadData));
             }
         }
 
@@ -95,11 +94,7 @@ namespace Kits.Providers
 
         private Task SaveData()
         {
-            if (m_KitsCooldownData == null)
-            {
-                return Task.CompletedTask;
-            }
-            return m_DataStore.SaveAsync(c_CooldownKey, m_KitsCooldownData);
+            return m_KitsCooldownData == null ? Task.CompletedTask : m_DataStore.SaveAsync(c_CooldownKey, m_KitsCooldownData);
         }
 
         public void Dispose()

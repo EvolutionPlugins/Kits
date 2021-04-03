@@ -51,13 +51,12 @@ namespace Kits.Commands
                 throw new UserFriendlyException("Kit with the same name already exists");
             }
 
-            var hasInventory = (IHasInventory)playerUser.Player;
-            if (hasInventory == null)
+            if (playerUser.Player is not IHasInventory hasInventory)
             {
                 throw new UserFriendlyException("IPlayer doesn't have compatibility IHasInventory");
             }
 
-            var items = hasInventory.Inventory.SelectMany(x => x.Items.Select(c => c.Item));
+            var items = hasInventory.Inventory!.SelectMany(x => x.Items.Select(c => c.Item)).ToList();
             if (!items.Any())
             {
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:create:noItems"]);
