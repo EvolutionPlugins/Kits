@@ -43,9 +43,9 @@ namespace Kits.Providers
             m_ItemSpawner = itemSpawner;
         }
 
-        public async Task GiveKitAsync(IPlayerUser player, string name)
+        public async Task GiveKitAsync(IPlayerUser user, string name)
         {
-            if (player is not IHasInventory inventory)
+            if (user.Player is not IHasInventory inventory)
             {
                 throw new UserFriendlyException("IPlayer doesn't have compatibility IHasInventory");
             }
@@ -57,29 +57,24 @@ namespace Kits.Providers
             {
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:notFound", new { Name = name }]);
             }
-            if (await m_PermissionChecker.CheckPermissionAsync(player,
+            if (await m_PermissionChecker.CheckPermissionAsync(user,
                 $"{m_Plugin.OpenModComponentId}:{KitStore.c_KitsKey}.{kit.Name}") != PermissionGrantResult.Grant)
             {
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:noPermission", new { Kit = kit }]);
             }
 
-            var cooldown = await m_KitCooldownStore.GetLastCooldown(player, name);
+            var cooldown = await m_KitCooldownStore.GetLastCooldown(user, name);
             if (cooldown != null)
             {
                 if (cooldown.Value.TotalSeconds < kit.Cooldown)
                 {
-                    var cooldownTime = Math.Round(kit.Cooldown - cooldown.Value.TotalSeconds);
                     throw new UserFriendlyException(m_StringLocalizer["commands:kit:cooldown",
-                        new { Kit = kit, Cooldown = cooldownTime }]);
-                }
-                else
-                {
-                    await m_KitCooldownStore.RegisterCooldown(player, name, DateTime.Now);
+                        new { Kit = kit, Cooldown = kit.Cooldown - cooldown.Value.TotalSeconds }]);
                 }
             }
-            await m_KitCooldownStore.RegisterCooldown(player, name, DateTime.Now);
+            await m_KitCooldownStore.RegisterCooldown(user, name, DateTime.Now);
 
-            var balance = await m_EconomyProvider.GetBalanceAsync(player.Id, player.Type);
+            var balance = await m_EconomyProvider.GetBalanceAsync(user.Id, user.Type);
             if (kit.Cost != 0 && balance < kit.Cost)
             {
                 var money = kit.Cost - balance;
@@ -95,12 +90,12 @@ namespace Kits.Providers
 
             if (kit.Cost != 0)
             {
-                await m_EconomyProvider.UpdateBalanceAsync(player.Id, player.Type, -kit.Cost,
+                await m_EconomyProvider.UpdateBalanceAsync(user.Id, user.Type, -kit.Cost,
                     m_StringLocalizer["commans:kit:balanceUpdateReason:buy", new { Kit = kit }]);
             }
             if (kit.Money != 0)
             {
-                await m_EconomyProvider.UpdateBalanceAsync(player.Id, player.Type, kit.Money,
+                await m_EconomyProvider.UpdateBalanceAsync(user.Id, user.Type, kit.Money,
                     m_StringLocalizer["commans:kit:balanceUpdateReason:got", new { Kit = kit }]);
             }
 
@@ -111,16 +106,16 @@ namespace Kits.Providers
                     var inventoryItem = await m_ItemSpawner.GiveItemAsync(inventory.Inventory!, item.ItemAssetId, item.State);
                     if (inventoryItem == null)
                     {
-                        m_Logger.LogError($"Item {item.ItemAssetId} was unable to give to player {player.FullActorName})");
+                        m_Logger.LogError($"Item {item.ItemAssetId} was unable to give to player {user.FullActorName})");
                     }
                 }
                 catch (Exception e)
                 {
-                    m_Logger.LogError(e, $"Item {item.ItemAssetId} was unable to give to player {player.FullActorName})");
+                    m_Logger.LogError(e, $"Item {item.ItemAssetId} was unable to give to player {user.FullActorName})");
                 }
             }
 
-            await player.PrintMessageAsync(m_StringLocalizer["commands:kit:success", new { Kit = kit }]);
+            await user.PrintMessageAsync(m_StringLocalizer["commands:kit:success", new { Kit = kit }]);
         }
 
         public async Task<IReadOnlyCollection<Kit>> GetAvailablePlayerKits(IPlayerUser player)

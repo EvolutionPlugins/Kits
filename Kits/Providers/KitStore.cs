@@ -31,8 +31,11 @@ namespace Kits.Providers
                 "datastore" => new DataStoreKitDatabase(plugin),
                 _ => throw new Exception()
             };
-            AsyncHelper.RunSync(m_Database.LoadDatabaseAsync);
-            AsyncHelper.RunSync(RegisterPermissionsAsync);
+            AsyncHelper.RunSync(async () =>
+            {
+                await m_Database.LoadDatabaseAsync();
+                await RegisterPermissionsAsync();
+            });
         }
 
         public Task<IReadOnlyCollection<Kit>> GetKits()
@@ -42,7 +45,7 @@ namespace Kits.Providers
 
         public async Task AddKit(Kit kit)
         {
-            if (await m_Database.AddKitAsync(kit) && !string.IsNullOrEmpty(kit.Name))
+            if (!string.IsNullOrEmpty(kit.Name) && await m_Database.AddKitAsync(kit))
             {
                 RegisterPermission(kit.Name!);
             }
@@ -67,6 +70,7 @@ namespace Kits.Providers
         {
             foreach (var kit in await m_Database.GetKitsAsync())
             {
+                Console.WriteLine(kit.Name ?? "na");
                 if (kit.Name != null)
                 {
                     RegisterPermission(kit.Name);
@@ -74,9 +78,9 @@ namespace Kits.Providers
             }
         }
 
-        private void RegisterPermission(string permission)
+        private void RegisterPermission(string kitName)
         {
-            m_PermissionRegistry.RegisterPermission(m_Plugin, permission);
+            m_PermissionRegistry.RegisterPermission(m_Plugin, "kits." + kitName.ToLower());
         }
         
 

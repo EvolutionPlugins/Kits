@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Kits.Databases
 {
-    public class MySQLKitDatabase : KitDatabaseCore, IKitDatabase
+    public sealed class MySQLKitDatabase : KitDatabaseCore, IKitDatabase
     {
         private readonly MySqlConnection m_MySqlConnection;
 
@@ -24,22 +24,14 @@ namespace Kits.Databases
                 await m_MySqlConnection.OpenAsync();
                 await using var command = m_MySqlConnection.CreateCommand();
 
-                command.CommandText = $"SHOW TABLES LIKE '{TableName}';";
-
-                if (await command.ExecuteScalarAsync() != null)
-                {
-                    await m_MySqlConnection.CloseAsync();
-                    return;
-                }
-
-                command.CommandText = @"CREATE TABLE @a (
+                command.CommandText = $@"CREATE TABLE IF NOT EXISTS `{TableName}` (
 	                `Name` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_unicode_ci',
 	                `Cooldown` FLOAT(12,0) NULL DEFAULT NULL,
             	    `Cost` DECIMAL(10,0) NULL DEFAULT NULL,
             	    `Money` DECIMAL(10,0) NULL DEFAULT NULL,
             	    `Items` BLOB NULL DEFAULT NULL,
-            	    PRIMARY KEY (`Name`) USING BTREE
-                ) COLLATE='utf8mb4_unicode_ci';";
+            	    PRIMARY KEY (`Name`)
+                );";
 
                 await command.ExecuteNonQueryAsync();
             }
@@ -58,13 +50,14 @@ namespace Kits.Databases
             {
                 throw new ArgumentNullException(nameof(kit));
             }
-
+            Console.WriteLine(kit.Name);
             try
             {
                 await m_MySqlConnection.OpenAsync();
                 await using var command = m_MySqlConnection.CreateCommand();
-
+                Console.WriteLine("a");
                 var bytes = kit.Items?.ConvertToByteArray() ?? Array.Empty<byte>();
+                Console.WriteLine("ab");
 
                 command.CommandText =
                     $"INSERT INTO `{TableName}` (`Name`, `Cooldown`, `Cost`, `Money`, `Items`) VALUES (@a, @b, @c, @d, @e);";
