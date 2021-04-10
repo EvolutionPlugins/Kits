@@ -34,7 +34,7 @@ jobs:
     - name: Build
       run: dotnet build Kits/Kits.csproj --configuration Release --no-restore
     - name: Deploy to NuGet
-      run: dotnet nuget push Kits/Kits/bin/Release/*.nupkg
+      run: dotnet nuget push Kits/bin/Release/*.nupkg
              --api-key ${{ secrets.NUGET_DEPLOY_KEY }}
              --source https://api.nuget.org/v3/index.json
     - name: Release to GitHub
