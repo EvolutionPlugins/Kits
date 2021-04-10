@@ -57,6 +57,7 @@ namespace Kits.Providers
             {
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:notFound", new { Name = name }]);
             }
+
             if (await m_PermissionChecker.CheckPermissionAsync(user,
                 $"{m_Plugin.OpenModComponentId}:{KitStore.c_KitsKey}.{kit.Name}") != PermissionGrantResult.Grant)
             {
@@ -72,6 +73,7 @@ namespace Kits.Providers
                         new { Kit = kit, Cooldown = kit.Cooldown - cooldown.Value.TotalSeconds }]);
                 }
             }
+
             await m_KitCooldownStore.RegisterCooldown(user, name, DateTime.Now);
 
             var balance = await m_EconomyProvider.GetBalanceAsync(user.Id, user.Type);
@@ -80,12 +82,12 @@ namespace Kits.Providers
                 var money = kit.Cost - balance;
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:noMoney",
                     new
-                        {
-                            Kit = kit,
-                            Money = money,
-                            MoneyName = m_EconomyProvider.CurrencyName,
-                            MoneySymbol = m_EconomyProvider.CurrencySymbol
-                        }]);
+                    {
+                        Kit = kit,
+                        Money = money,
+                        MoneyName = m_EconomyProvider.CurrencyName,
+                        MoneySymbol = m_EconomyProvider.CurrencySymbol
+                    }]);
             }
 
             if (kit.Cost is not null && kit.Cost != 0)
@@ -93,6 +95,7 @@ namespace Kits.Providers
                 await m_EconomyProvider.UpdateBalanceAsync(user.Id, user.Type, -kit.Cost.Value,
                     m_StringLocalizer["commands:kit:balanceUpdateReason:buy", new { Kit = kit }]);
             }
+
             if (kit.Money is not null && kit.Money != 0)
             {
                 await m_EconomyProvider.UpdateBalanceAsync(user.Id, user.Type, kit.Money.Value,
@@ -103,10 +106,12 @@ namespace Kits.Providers
             {
                 try
                 {
-                    var inventoryItem = await m_ItemSpawner.GiveItemAsync(inventory.Inventory!, item.ItemAssetId, item.State);
+                    var inventoryItem =
+                        await m_ItemSpawner.GiveItemAsync(inventory.Inventory!, item.ItemAssetId, item.State);
                     if (inventoryItem == null)
                     {
-                        m_Logger.LogError($"Item {item.ItemAssetId} was unable to give to player {user.FullActorName})");
+                        m_Logger.LogError(
+                            $"Item {item.ItemAssetId} was unable to give to player {user.FullActorName})");
                     }
                 }
                 catch (Exception e)
@@ -129,6 +134,7 @@ namespace Kits.Providers
                     list.Add(kit);
                 }
             }
+
             return list;
         }
     }

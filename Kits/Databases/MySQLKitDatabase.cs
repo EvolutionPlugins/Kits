@@ -94,7 +94,8 @@ namespace Kits.Databases
                 await m_MySqlConnection.OpenAsync();
                 await using var command = m_MySqlConnection.CreateCommand();
 
-                command.CommandText = $"SELECT `Name`, `Cooldown`, `Cost`, `Money`, `Items` FROM `{TableName}` WHERE `Name` = @n;";
+                command.CommandText =
+                    $"SELECT `Name`, `Cooldown`, `Cost`, `Money`, `Items` FROM `{TableName}` WHERE `Name` = @n;";
                 command.Parameters.AddWithValue("n", name);
 
                 await using var reader = await command.ExecuteReaderAsync();
@@ -159,6 +160,7 @@ namespace Kits.Databases
                         });
                     }
                 }
+
                 return result;
             }
             finally

@@ -27,7 +27,8 @@ namespace Kits.Providers
         private IKitDatabase m_Database = null!;
         private IDisposable? m_ConfigurationChangedWatcher;
 
-        public KitStore(Kits plugin, IPermissionRegistry permissionRegistry, ILogger<KitStore> logger, IEventBus eventBus)
+        public KitStore(Kits plugin, IPermissionRegistry permissionRegistry, ILogger<KitStore> logger,
+            IEventBus eventBus)
         {
             m_Plugin = plugin;
             m_PermissionRegistry = permissionRegistry;
@@ -35,10 +36,12 @@ namespace Kits.Providers
 
             AsyncHelper.RunSync(ParseLoadDatabase);
 
-            m_ConfigurationChangedWatcher = eventBus.Subscribe<PluginConfigurationChangedEvent>(plugin, PluginConfigurationChanged);
+            m_ConfigurationChangedWatcher =
+                eventBus.Subscribe<PluginConfigurationChangedEvent>(plugin, PluginConfigurationChanged);
         }
 
-        private Task PluginConfigurationChanged(IServiceProvider serviceprovider, object? sender, PluginConfigurationChangedEvent @event)
+        private Task PluginConfigurationChanged(IServiceProvider serviceprovider, object? sender,
+            PluginConfigurationChangedEvent @event)
         {
             return @event.Plugin != m_Plugin ? Task.CompletedTask : ParseLoadDatabase();
         }

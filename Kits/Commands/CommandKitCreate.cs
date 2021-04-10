@@ -40,7 +40,7 @@ namespace Kits.Commands
 
             var playerUser = (IPlayerUser)Context.Actor;
             var name = Context.Parameters[0];
-            
+
             // ReSharper disable once SuspiciousTypeConversion.Global
             if (playerUser.Player is not IHasInventory hasInventory)
             {
@@ -73,7 +73,7 @@ namespace Kits.Commands
                 Cost = 0,
                 Money = 0
             };
-            
+
             UnturnedExtension.AddClothes(playerUser, kit.Items);
 
             await m_KitStore.AddKit(kit);

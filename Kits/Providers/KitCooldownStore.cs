@@ -52,14 +52,15 @@ namespace Kits.Providers
             if (m_KitsCooldownData.KitsCooldown!.TryGetValue(player.Id, out var kitCooldowns))
             {
                 var kitCooldown = kitCooldowns!.Find(x => x.KitName == kitName)
-                    ?? new() { KitName = kitName, KitCooldown = time };
+                                  ?? new() { KitName = kitName, KitCooldown = time };
                 kitCooldown.KitCooldown = time;
             }
             else
             {
-                m_KitsCooldownData.KitsCooldown.Add(player.Id, new()
-                    { new() { KitCooldown = time, KitName = kitName } });
+                m_KitsCooldownData.KitsCooldown.Add(player.Id,
+                    new() { new() { KitCooldown = time, KitName = kitName } });
             }
+
             await SaveData();
         }
 
@@ -67,10 +68,8 @@ namespace Kits.Providers
         {
             if (await m_DataStore.ExistsAsync(c_CooldownKey))
             {
-                m_KitsCooldownData = await m_DataStore.LoadAsync<KitsCooldownData>(c_CooldownKey) ?? new()
-                {
-                    KitsCooldown = new()
-                };
+                m_KitsCooldownData = await m_DataStore.LoadAsync<KitsCooldownData>(c_CooldownKey) ??
+                                     new() { KitsCooldown = new() };
             }
             else
             {

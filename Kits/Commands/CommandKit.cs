@@ -28,7 +28,7 @@ namespace Kits.Commands
             {
                 throw new CommandWrongUsageException(Context);
             }
-            
+
             var kitName = Context.Parameters[0];
             return m_KitManager.GiveKitAsync(playerUser, kitName);
         }

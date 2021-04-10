@@ -26,6 +26,7 @@ namespace Kits.Databases
             {
                 throw new UserFriendlyException("Kit with the same name already exists");
             }
+
             m_Data.Kits?.Add(kit);
             await SaveToDisk();
             return true;
@@ -45,10 +46,7 @@ namespace Kits.Databases
         {
             if (await Plugin.DataStore.ExistsAsync(c_KitsKey))
             {
-                m_Data = await Plugin.DataStore.LoadAsync<KitsData>(c_KitsKey) ?? new()
-                {
-                    Kits = new()
-                };
+                m_Data = await Plugin.DataStore.LoadAsync<KitsData>(c_KitsKey) ?? new() { Kits = new() };
             }
             else
             {
