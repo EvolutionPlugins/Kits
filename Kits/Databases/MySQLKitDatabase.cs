@@ -62,11 +62,12 @@ namespace Kits.Databases
                 Console.WriteLine("ab");
 
                 command.CommandText =
-                    $"INSERT INTO `{TableName}` (`Name`, `Cooldown`, `Cost`, `Money`, `Items`) VALUES (@a, @b, @c, @d, @e);";
+                    $"INSERT INTO `{TableName}` (`Name`, `Cooldown`, `Cost`, `Money`, `VehicleId`, `Items`) VALUES (@a, @b, @c, @d, @f, @e);";
                 command.Parameters.AddWithValue("a", kit.Name);
                 command.Parameters.AddWithValue("b", kit.Cooldown);
                 command.Parameters.AddWithValue("c", kit.Cost);
                 command.Parameters.AddWithValue("d", kit.Money);
+                command.Parameters.AddWithValue("f", kit.VehicleId);
                 command.Parameters.AddWithValue("e", bytes);
 
                 var i = await command.ExecuteNonQueryAsync();
