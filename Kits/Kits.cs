@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
 using OpenMod.API.Plugins;
 using OpenMod.Core.Plugins;
 using System;
@@ -9,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace Kits
 {
+    [UsedImplicitly]
     public class Kits : OpenModUniversalPlugin
     {
         private readonly ILogger<Kits> m_Logger;

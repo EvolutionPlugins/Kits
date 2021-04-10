@@ -22,7 +22,7 @@ namespace Kits.Databases
 
         public async Task<bool> AddKitAsync(Kit kit)
         {
-            if (m_Data.Kits.Any(x => x.Name?.Equals(kit.Name, StringComparison.OrdinalIgnoreCase) == true))
+            if (m_Data.Kits.Any(x => x.Name?.Equals(kit.Name, StringComparison.OrdinalIgnoreCase) ?? false))
             {
                 throw new UserFriendlyException("Kit with the same name already exists");
             }
@@ -55,14 +55,14 @@ namespace Kits.Databases
                 m_Data = new() { Kits = new() };
             }
 
-            m_FileWatcher ??= Plugin.DataStore.AddChangeWatcher(c_KitsKey, Plugin,
+            m_FileWatcher = Plugin.DataStore.AddChangeWatcher(c_KitsKey, Plugin,
                 () => AsyncHelper.RunSync(LoadDatabaseAsync));
         }
 
         public async Task<bool> RemoveKitAsync(string name)
         {
-            var index = m_Data.Kits?.FindIndex(x => x.Name?.Equals(name, StringComparison.OrdinalIgnoreCase) == true);
-            if (index != null && index < 0)
+            var index = m_Data.Kits?.FindIndex(x => x.Name?.Equals(name, StringComparison.OrdinalIgnoreCase) ?? false);
+            if (index < 0)
             {
                 throw new UserFriendlyException(StringLocalizer["commands:kit:remove:fail", new { Name = name }]);
             }
@@ -79,8 +79,9 @@ namespace Kits.Databases
                 throw new ArgumentNullException(nameof(kit));
             }
 
-            var index = m_Data.Kits?.FindIndex(x => x.Name?.Equals(kit.Name, StringComparison.OrdinalIgnoreCase) == true);
-            if (index != null && index < 0)
+            var index = m_Data.Kits?.FindIndex(
+                x => x.Name?.Equals(kit.Name, StringComparison.OrdinalIgnoreCase) ?? false);
+            if (index < 0)
             {
                 return false;
                 //throw new UserFriendlyException(StringLocalizer["commands:kit:update:fail", new { Name = name }]);

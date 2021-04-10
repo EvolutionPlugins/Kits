@@ -8,7 +8,7 @@ namespace Kits.API
         {
         }
 
-        public KitItem(string itemAssetId, IItemState itemState)
+        public KitItem(string? itemAssetId, IItemState itemState)
         {
             ItemAssetId = itemAssetId ?? string.Empty;
             State = new KitItemState(itemState);

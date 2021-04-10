@@ -1,4 +1,5 @@
-﻿using Kits.API;
+﻿using JetBrains.Annotations;
+using Kits.API;
 using Microsoft.Extensions.Localization;
 using OpenMod.Core.Commands;
 using OpenMod.Extensions.Games.Abstractions.Players;
@@ -10,6 +11,7 @@ namespace Kits.Commands
 {
     [Command("kits")]
     [CommandActor(typeof(IPlayerUser))]
+    [UsedImplicitly]
     public class CommandKits : Command
     {
         private readonly IKitManager m_KitManager;

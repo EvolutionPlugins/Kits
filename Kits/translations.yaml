@@ -11,7 +11,7 @@ commands:
       got: "Got money from kit {Kit.Name}"
     create:
       noItems: "Your inventory is empty"
-      success: "Succefully created kit {Kit.Name}"
+      success: "Successfully created kit {Kit.Name}"
     remove: 
       success: "Kit {Name} successfully removed"
       fail: "Kit {Name} not found"

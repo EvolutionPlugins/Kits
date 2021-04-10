@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using LiteDB;
+using System.Collections.Generic;
 
 namespace Kits.API
 {
     public class Kit
     {
-        public string? Name { get; set; }
+        [BsonId] public string? Name { get; set; }
         public float Cooldown { get; set; }
         public decimal Cost { get; set; }
         public decimal Money { get; set; }

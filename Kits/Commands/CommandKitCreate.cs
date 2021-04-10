@@ -1,4 +1,5 @@
-﻿using Kits.API;
+﻿using JetBrains.Annotations;
+using Kits.API;
 using Kits.Extensions;
 using Microsoft.Extensions.Localization;
 using OpenMod.API.Commands;
@@ -17,6 +18,7 @@ namespace Kits.Commands
     [CommandActor(typeof(IPlayerUser))]
     [CommandParent(typeof(CommandKit))]
     [CommandSyntax("<name> [cooldown]")]
+    [UsedImplicitly]
     public class CommandKitCreate : Command
     {
         private readonly IKitStore m_KitStore;
@@ -51,6 +53,7 @@ namespace Kits.Commands
                 throw new UserFriendlyException("Kit with the same name already exists");
             }
 
+            // ReSharper disable once SuspiciousTypeConversion.Global
             if (playerUser.Player is not IHasInventory hasInventory)
             {
                 throw new UserFriendlyException("IPlayer doesn't have compatibility IHasInventory");

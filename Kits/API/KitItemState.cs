@@ -9,7 +9,7 @@ namespace Kits.API
         {
         }
 
-        public KitItemState(IItemState itemState)
+        public KitItemState(IItemState? itemState)
         {
             ItemAmount = itemState?.ItemAmount ?? 0;
             ItemDurability = itemState?.ItemDurability ?? 0;

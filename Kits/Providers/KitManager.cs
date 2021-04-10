@@ -1,4 +1,5 @@
-﻿using Kits.API;
+﻿using JetBrains.Annotations;
+using Kits.API;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
@@ -11,12 +12,12 @@ using OpenMod.Extensions.Games.Abstractions.Items;
 using OpenMod.Extensions.Games.Abstractions.Players;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Kits.Providers
 {
     [PluginServiceImplementation(Lifetime = ServiceLifetime.Singleton, Priority = Priority.Lowest)]
+    [UsedImplicitly]
     public class KitManager : IKitManager
     {
         private readonly ILogger<Kits> m_Logger;
@@ -44,8 +45,7 @@ namespace Kits.Providers
 
         public async Task GiveKitAsync(IPlayerUser player, string name)
         {
-            var inventory = (IHasInventory)player.Player;
-            if (inventory == null)
+            if (player is not IHasInventory inventory)
             {
                 throw new UserFriendlyException("IPlayer doesn't have compatibility IHasInventory");
             }
@@ -69,7 +69,8 @@ namespace Kits.Providers
                 if (cooldown.Value.TotalSeconds < kit.Cooldown)
                 {
                     var cooldownTime = Math.Round(kit.Cooldown - cooldown.Value.TotalSeconds);
-                    throw new UserFriendlyException(m_StringLocalizer["commands:kit:cooldown", new { Kit = kit, Cooldown = cooldownTime }]);
+                    throw new UserFriendlyException(m_StringLocalizer["commands:kit:cooldown",
+                        new { Kit = kit, Cooldown = cooldownTime }]);
                 }
                 else
                 {
@@ -83,7 +84,13 @@ namespace Kits.Providers
             {
                 var money = kit.Cost - balance;
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:noMoney",
-                    new { Kit = kit, Money = money, MoneyName = m_EconomyProvider.CurrencyName, MoneySymbol = m_EconomyProvider.CurrencySymbol }]);
+                    new
+                        {
+                            Kit = kit,
+                            Money = money,
+                            MoneyName = m_EconomyProvider.CurrencyName,
+                            MoneySymbol = m_EconomyProvider.CurrencySymbol
+                        }]);
             }
 
             if (kit.Cost != 0)
