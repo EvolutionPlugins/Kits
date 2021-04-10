@@ -91,12 +91,12 @@ namespace Kits.Providers
             if (kit.Cost is not null && kit.Cost != 0)
             {
                 await m_EconomyProvider.UpdateBalanceAsync(user.Id, user.Type, -kit.Cost.Value,
-                    m_StringLocalizer["commans:kit:balanceUpdateReason:buy", new { Kit = kit }]);
+                    m_StringLocalizer["commands:kit:balanceUpdateReason:buy", new { Kit = kit }]);
             }
             if (kit.Money is not null && kit.Money != 0)
             {
                 await m_EconomyProvider.UpdateBalanceAsync(user.Id, user.Type, kit.Money.Value,
-                    m_StringLocalizer["commans:kit:balanceUpdateReason:got", new { Kit = kit }]);
+                    m_StringLocalizer["commands:kit:balanceUpdateReason:got", new { Kit = kit }]);
             }
 
             foreach (var item in kit.Items!)
