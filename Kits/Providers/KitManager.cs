@@ -88,14 +88,14 @@ namespace Kits.Providers
                         }]);
             }
 
-            if (kit.Cost != 0)
+            if (kit.Cost is not null && kit.Cost != 0)
             {
-                await m_EconomyProvider.UpdateBalanceAsync(user.Id, user.Type, -kit.Cost,
+                await m_EconomyProvider.UpdateBalanceAsync(user.Id, user.Type, -kit.Cost.Value,
                     m_StringLocalizer["commans:kit:balanceUpdateReason:buy", new { Kit = kit }]);
             }
-            if (kit.Money != 0)
+            if (kit.Money is not null && kit.Money != 0)
             {
-                await m_EconomyProvider.UpdateBalanceAsync(user.Id, user.Type, kit.Money,
+                await m_EconomyProvider.UpdateBalanceAsync(user.Id, user.Type, kit.Money.Value,
                     m_StringLocalizer["commans:kit:balanceUpdateReason:got", new { Kit = kit }]);
             }
 
