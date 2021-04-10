@@ -5,7 +5,7 @@ using OpenMod.Core.Plugins;
 using System;
 using System.Threading.Tasks;
 
-[assembly: PluginMetadata("Kits", DisplayName = "Kits", Author = "EvolutionPlugins, DiFFoZ",
+[assembly: PluginMetadata("Kits", DisplayName = "Kits", Author = "EvolutionPlugins",
     Website = "https://discord.gg/6KymqGv")]
 
 namespace Kits

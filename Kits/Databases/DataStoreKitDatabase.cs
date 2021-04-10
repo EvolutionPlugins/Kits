@@ -14,7 +14,7 @@ namespace Kits.Databases
         private const string c_KitsKey = "kits";
 
         private KitsData m_Data = null!;
-        private IDisposable m_FileWatcher = null!;
+        private IDisposable? m_FileWatcher = null!;
 
         public DataStoreKitDatabase(Kits plugin) : base(plugin)
         {

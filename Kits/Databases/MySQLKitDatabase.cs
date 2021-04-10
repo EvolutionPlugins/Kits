@@ -26,9 +26,9 @@ namespace Kits.Databases
 
                 command.CommandText = $@"CREATE TABLE IF NOT EXISTS `{TableName}` (
 	                `Name` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_unicode_ci',
-	                `Cooldown` FLOAT(12,0) NULL DEFAULT NULL,
-            	    `Cost` DECIMAL(10,0) NULL DEFAULT NULL,
-            	    `Money` DECIMAL(10,0) NULL DEFAULT NULL,
+	                `Cooldown` FLOAT(12,0) NOT NULL DEFAULT '0',
+            	    `Cost` DECIMAL(10,0) NOT NULL DEFAULT '0',
+            	    `Money` DECIMAL(10,0) NOT NULL DEFAULT '0',
             	    `Items` BLOB NULL DEFAULT NULL,
             	    PRIMARY KEY (`Name`)
                 );";
@@ -37,6 +37,7 @@ namespace Kits.Databases
             }
             finally
             {
+                Console.WriteLine(m_MySqlConnection.State);
                 if (m_MySqlConnection.State == ConnectionState.Open)
                 {
                     await m_MySqlConnection.CloseAsync();
@@ -50,7 +51,7 @@ namespace Kits.Databases
             {
                 throw new ArgumentNullException(nameof(kit));
             }
-            Console.WriteLine(kit.Name);
+
             try
             {
                 await m_MySqlConnection.OpenAsync();
@@ -73,13 +74,12 @@ namespace Kits.Databases
             }
             finally
             {
+                Console.WriteLine(m_MySqlConnection.State);
                 if (m_MySqlConnection.State == ConnectionState.Open)
                 {
                     await m_MySqlConnection.CloseAsync();
                 }
             }
-
-            return false;
         }
 
         public async Task<Kit?> GetKitAsync(string name)
@@ -121,6 +121,7 @@ namespace Kits.Databases
             }
             finally
             {
+                Console.WriteLine(m_MySqlConnection.State);
                 if (m_MySqlConnection.State == ConnectionState.Open)
                 {
                     await m_MySqlConnection.CloseAsync();
@@ -162,6 +163,7 @@ namespace Kits.Databases
             }
             finally
             {
+                Console.WriteLine(m_MySqlConnection.State);
                 if (m_MySqlConnection.State == ConnectionState.Open)
                 {
                     await m_MySqlConnection.CloseAsync();
@@ -190,6 +192,7 @@ namespace Kits.Databases
             }
             finally
             {
+                Console.WriteLine(m_MySqlConnection.State);
                 if (m_MySqlConnection.State == ConnectionState.Open)
                 {
                     await m_MySqlConnection.CloseAsync();
@@ -231,6 +234,7 @@ namespace Kits.Databases
             }
             finally
             {
+                Console.WriteLine(m_MySqlConnection.State);
                 if (m_MySqlConnection.State == ConnectionState.Open)
                 {
                     await m_MySqlConnection.CloseAsync();

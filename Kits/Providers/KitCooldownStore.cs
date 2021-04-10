@@ -23,7 +23,7 @@ namespace Kits.Providers
         private readonly Kits m_Plugin;
 
         private KitsCooldownData m_KitsCooldownData = null!;
-        private IDisposable m_FileWatcher = null!;
+        private IDisposable? m_FileWatcher = null!;
 
         public KitCooldownStore(Kits plugin, IPermissionRegistry permissionRegistry)
         {
@@ -36,15 +36,15 @@ namespace Kits.Providers
             AsyncHelper.RunSync(LoadData);
         }
 
-        public async Task<TimeSpan?> GetLastCooldown(IPlayerUser player, string kitName)
+        public Task<TimeSpan?> GetLastCooldown(IPlayerUser player, string kitName)
         {
             if (!m_KitsCooldownData.KitsCooldown!.TryGetValue(player.Id, out var kitCooldowns))
             {
-                return null;
+                return Task.FromResult<TimeSpan?>(null);
             }
 
             var kitCooldown = kitCooldowns!.Find(x => x.KitName == kitName);
-            return kitCooldown == null ? null : DateTime.Now - kitCooldown.KitCooldown;
+            return Task.FromResult<TimeSpan?>(kitCooldown == null ? null : DateTime.Now - kitCooldown.KitCooldown);
         }
 
         public async Task RegisterCooldown(IPlayerUser player, string kitName, DateTime time)
@@ -93,7 +93,7 @@ namespace Kits.Providers
 
         public void Dispose()
         {
-            m_FileWatcher.Dispose();
+            m_FileWatcher?.Dispose();
         }
     }
 }

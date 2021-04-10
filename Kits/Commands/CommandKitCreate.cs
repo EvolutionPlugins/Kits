@@ -40,8 +40,14 @@ namespace Kits.Commands
 
             var playerUser = (IPlayerUser)Context.Actor;
             var name = Context.Parameters[0];
+            
+            // ReSharper disable once SuspiciousTypeConversion.Global
+            if (playerUser.Player is not IHasInventory hasInventory)
+            {
+                throw new UserFriendlyException("IPlayer doesn't have compatibility IHasInventory");
+            }
 
-            TimeSpan cooldown = TimeSpan.Zero;
+            var cooldown = TimeSpan.Zero;
             if (Context.Parameters.Count > 1)
             {
                 cooldown = await Context.Parameters.GetAsync<TimeSpan>(1);
@@ -53,14 +59,8 @@ namespace Kits.Commands
                 throw new UserFriendlyException("Kit with the same name already exists");
             }
 
-            // ReSharper disable once SuspiciousTypeConversion.Global
-            if (playerUser.Player is not IHasInventory hasInventory)
-            {
-                throw new UserFriendlyException("IPlayer doesn't have compatibility IHasInventory");
-            }
-
             var items = hasInventory.Inventory!.SelectMany(x => x.Items.Select(c => c.Item)).ToList();
-            if (!items.Any())
+            if (items.Count == 0)
             {
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:create:noItems"]);
             }
@@ -69,8 +69,13 @@ namespace Kits.Commands
             {
                 Cooldown = (float)cooldown.TotalSeconds,
                 Items = items.Select(x => x.ConvertIItemToKitItem()).ToList(),
-                Name = name
+                Name = name,
+                Cost = 0,
+                Money = 0
             };
+            
+            UnturnedExtension.AddClothes(playerUser, kit.Items);
+
             await m_KitStore.AddKit(kit);
             await PrintAsync(m_StringLocalizer["commands:kit:create:success", new { Kit = kit }]);
         }

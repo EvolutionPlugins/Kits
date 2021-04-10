@@ -24,7 +24,11 @@ namespace Kits.Commands
                 throw new CommandWrongUsageException(Context);
             }
 
-            var playerUser = (IPlayerUser)Context.Actor;
+            if (Context.Actor is not IPlayerUser playerUser)
+            {
+                throw new CommandWrongUsageException(Context);
+            }
+            
             var kitName = Context.Parameters[0];
             return m_KitManager.GiveKitAsync(playerUser, kitName);
         }

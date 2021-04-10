@@ -15,7 +15,7 @@
     <Version>0.0.0</Version>
     <InformationalVersion>0.0.0</InformationalVersion>
     <PackageVersion>0.0.0</PackageVersion>
-    <Authors>EvolutionPlugins;DiFFoZ</Authors>
+    <Authors>EvolutionPlugins</Authors>
     <Company>EvolutionPlugins</Company>
     <PackageId>DiFFoZ.Kits</PackageId>
     <Description>Universal plugin for OpenMod. Adds a kit system.</Description>
@@ -38,6 +38,8 @@
     <PackageReference Include="OpenMod.Core" Version="3.0.24" />
     <PackageReference Include="OpenMod.Extensions.Economy.Abstractions" Version="3.0.24" />
     <PackageReference Include="OpenMod.Extensions.Games.Abstractions" Version="3.0.24" />
+    <PackageReference Include="OpenMod.UnityEngine.Redist" Version="2019.4.10" />
+    <PackageReference Include="OpenMod.Unturned.Redist" Version="3.21.13" />
   </ItemGroup>
 
   <ItemGroup>
@@ -49,5 +51,13 @@
   <ItemGroup>
     <None Include="..\.editorconfig" Link=".editorconfig" />
   </ItemGroup>
+
+  <Target Name="ChangeAliasesOfNugetRefs" BeforeTargets="FindReferenceAssembliesForReferences;ResolveReferences">
+    <ItemGroup>
+      <ReferencePath Condition="'%(FileName)' == 'JetBrains.Annotations'">
+        <Aliases>JetBrainsAnnotations</Aliases>
+      </ReferencePath>
+    </ItemGroup>
+  </Target>
 
 </Project>
