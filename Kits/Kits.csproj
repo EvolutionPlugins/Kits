@@ -44,7 +44,6 @@
 
   <ItemGroup>
     <EmbeddedResource Include="config.yaml" />
-    <EmbeddedResource Include="packages.yaml" />
     <EmbeddedResource Include="translations.yaml" />
   </ItemGroup>
 

@@ -1,4 +1,8 @@
 ﻿database:
+  # https://www.connectionstrings.com/mysql/
   connection: "Server=127.0.0.1;Database=unturned;Uid=root;Pwd=root;"
+  # Type of datastore that will be used
+  # datastore (default): will create 'kits.data.yaml' file that saves all kits
+  # mysql: will create table with name from 'connectionTableName'
   connectionType: "mysql"
   connectionTableName: "Kits"

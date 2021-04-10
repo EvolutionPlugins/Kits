@@ -1,5 +1,0 @@
-﻿packages:
-- id: MySqlConnector
-  version: latest
-- id: EvolutionPlugins.Economy.Stub
-  version: latest

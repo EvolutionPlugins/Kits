@@ -31,7 +31,7 @@ namespace Kits.Databases
 
             if (m_Data.Kits.Any(x => x.Name?.Equals(kit.Name, StringComparison.OrdinalIgnoreCase) ?? false))
             {
-                throw new UserFriendlyException("Kit with the same name already exists");
+                throw new UserFriendlyException(StringLocalizer["commands:kit:exist"]);
             }
 
             m_Data.Kits?.Add(kit);
@@ -55,6 +55,8 @@ namespace Kits.Databases
 
             m_FileWatcher = Plugin.DataStore.AddChangeWatcher(c_KitsKey, Plugin,
                 () => AsyncHelper.RunSync(LoadFromDisk));
+
+            await SaveToDisk();
         }
 
         private async Task LoadFromDisk()

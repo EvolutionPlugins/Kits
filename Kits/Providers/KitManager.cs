@@ -10,6 +10,7 @@ using OpenMod.API.Prioritization;
 using OpenMod.Extensions.Economy.Abstractions;
 using OpenMod.Extensions.Games.Abstractions.Items;
 using OpenMod.Extensions.Games.Abstractions.Players;
+using OpenMod.Extensions.Games.Abstractions.Vehicles;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -28,10 +29,11 @@ namespace Kits.Providers
         private readonly IPermissionChecker m_PermissionChecker;
         private readonly Kits m_Plugin;
         private readonly IItemSpawner m_ItemSpawner;
+        private readonly IVehicleSpawner m_VehicleSpawner;
 
         public KitManager(ILogger<Kits> logger, IEconomyProvider economyProvider,
             IKitCooldownStore kitCooldownStore, IKitStore kitStore, IStringLocalizer stringLocalizer,
-            IPermissionChecker permissionChecker, Kits plugin, IItemSpawner itemSpawner)
+            IPermissionChecker permissionChecker, Kits plugin, IItemSpawner itemSpawner, IVehicleSpawner vehicleSpawner)
         {
             m_Logger = logger;
             m_EconomyProvider = economyProvider;
@@ -41,6 +43,7 @@ namespace Kits.Providers
             m_PermissionChecker = permissionChecker;
             m_Plugin = plugin;
             m_ItemSpawner = itemSpawner;
+            m_VehicleSpawner = vehicleSpawner;
         }
 
         public async Task GiveKitAsync(IPlayerUser user, string name)
@@ -118,6 +121,11 @@ namespace Kits.Providers
                 {
                     m_Logger.LogError(e, $"Item {item.ItemAssetId} was unable to give to player {user.FullActorName})");
                 }
+            }
+
+            if (kit.VehicleId is not null)
+            {
+                await m_VehicleSpawner.SpawnVehicleAsync(user.Player, kit.VehicleId);
             }
 
             await user.PrintMessageAsync(m_StringLocalizer["commands:kit:success", new { Kit = kit }]);

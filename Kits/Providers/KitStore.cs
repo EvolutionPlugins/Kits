@@ -23,9 +23,9 @@ namespace Kits.Providers
         private readonly Kits m_Plugin;
         private readonly IPermissionRegistry m_PermissionRegistry;
         private readonly ILogger<KitStore> m_Logger;
+        private readonly IDisposable? m_ConfigurationChangedWatcher;
 
         private IKitDatabase m_Database = null!;
-        private IDisposable? m_ConfigurationChangedWatcher;
 
         public KitStore(Kits plugin, IPermissionRegistry permissionRegistry, ILogger<KitStore> logger,
             IEventBus eventBus)
@@ -48,7 +48,8 @@ namespace Kits.Providers
 
         private async Task ParseLoadDatabase()
         {
-            m_Database = (m_Plugin.Configuration["database:connectionType"].ToLower() switch
+            var type = m_Plugin.Configuration["database:connectionType"];
+            m_Database = (type.ToLower() switch
             {
                 "mysql" => new MySQLKitDatabase(m_Plugin),
                 "datastore" => new DataStoreKitDatabase(m_Plugin),
@@ -60,7 +61,11 @@ namespace Kits.Providers
             {
                 m_Database = new DataStoreKitDatabase(m_Plugin);
                 m_Logger.LogWarning(
-                    $"Unable to parse {m_Plugin.Configuration["database:connectionType"]}. Setting to default: `datastore`");
+                    $"Unable to parse {type}. Setting to default: `datastore`");
+            }
+            else
+            {
+                m_Logger.LogInformation($"Datastore type set to `{type}`");
             }
 
             await m_Database!.LoadDatabaseAsync();

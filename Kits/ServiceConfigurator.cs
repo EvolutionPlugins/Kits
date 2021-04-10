@@ -14,14 +14,7 @@ namespace Kits
     {
         public void ConfigureServices(IOpenModServiceConfigurationContext openModStartupContext, IServiceCollection serviceCollection)
         {
-            try
-            {
-                serviceCollection.AddEconomyStub();
-            }
-            catch(Exception e)
-            {
-                Console.WriteLine(e);
-            }
+            serviceCollection.AddEconomyStub();
         }
     }
 }

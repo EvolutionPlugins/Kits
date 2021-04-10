@@ -56,7 +56,7 @@ namespace Kits.Commands
             var kits = await m_KitStore.GetKits();
             if (kits.Any(x => x.Name?.Equals(name, StringComparison.OrdinalIgnoreCase) ?? false))
             {
-                throw new UserFriendlyException("Kit with the same name already exists");
+                throw new UserFriendlyException(m_StringLocalizer["commands:kit:exist"]);
             }
 
             var items = hasInventory.Inventory!.SelectMany(x => x.Items.Select(c => c.Item)).ToList();
@@ -71,7 +71,8 @@ namespace Kits.Commands
                 Items = items.Select(x => x.ConvertIItemToKitItem()).ToList(),
                 Name = name,
                 Cost = 0,
-                Money = 0
+                Money = 0,
+                VehicleId = string.Empty
             };
 
             UnturnedExtension.AddClothes(playerUser, kit.Items);

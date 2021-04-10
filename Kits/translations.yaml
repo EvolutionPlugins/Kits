@@ -2,6 +2,7 @@ commands:
   kits: "Your available kits: {KitNames:{}|'none'}"
   kit:
     success: "Kit {Kit.Name} successfully received"
+    exist: "Kit with name {Name} already exists"
     cooldown: "Kit {Kit.Name} have cooldown. Needs wait for {Cooldown:0.##} sec"
     noPermission: "You don't have permission to get a kit {Kit.Name}"
     notFound: "Kit {Name} not found"

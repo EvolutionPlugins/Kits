@@ -29,6 +29,7 @@ namespace Kits.Databases
 	                `Cooldown` FLOAT(12,0) NOT NULL DEFAULT '0',
             	    `Cost` DECIMAL(10,0) NOT NULL DEFAULT '0',
             	    `Money` DECIMAL(10,0) NOT NULL DEFAULT '0',
+                    `VehicleId` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_unicode_ci',
             	    `Items` BLOB NULL DEFAULT NULL,
             	    PRIMARY KEY (`Name`)
                 );";
