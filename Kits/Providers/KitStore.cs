@@ -2,9 +2,12 @@
 using Kits.API;
 using Kits.Databases;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using OpenMod.API.Eventing;
 using OpenMod.API.Ioc;
 using OpenMod.API.Permissions;
 using OpenMod.Core.Helpers;
+using OpenMod.Core.Plugins.Events;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -19,23 +22,46 @@ namespace Kits.Providers
 
         private readonly Kits m_Plugin;
         private readonly IPermissionRegistry m_PermissionRegistry;
-        private readonly IKitDatabase m_Database;
+        private readonly ILogger<KitStore> m_Logger;
 
-        public KitStore(Kits plugin, IPermissionRegistry permissionRegistry)
+        private IKitDatabase m_Database = null!;
+        private IDisposable? m_ConfigurationChangedWatcher;
+
+        public KitStore(Kits plugin, IPermissionRegistry permissionRegistry, ILogger<KitStore> logger, IEventBus eventBus)
         {
             m_Plugin = plugin;
             m_PermissionRegistry = permissionRegistry;
-            m_Database = plugin.Configuration["database:connectionType"].ToLower() switch
+            m_Logger = logger;
+
+            AsyncHelper.RunSync(ParseLoadDatabase);
+
+            m_ConfigurationChangedWatcher = eventBus.Subscribe<PluginConfigurationChangedEvent>(plugin, PluginConfigurationChanged);
+        }
+
+        private Task PluginConfigurationChanged(IServiceProvider serviceprovider, object? sender, PluginConfigurationChangedEvent @event)
+        {
+            return @event.Plugin != m_Plugin ? Task.CompletedTask : ParseLoadDatabase();
+        }
+
+        private async Task ParseLoadDatabase()
+        {
+            m_Database = (m_Plugin.Configuration["database:connectionType"].ToLower() switch
             {
-                "mysql" => new MySQLKitDatabase(plugin),
-                "datastore" => new DataStoreKitDatabase(plugin),
-                _ => throw new Exception()
-            };
-            AsyncHelper.RunSync(async () =>
+                "mysql" => new MySQLKitDatabase(m_Plugin),
+                "datastore" => new DataStoreKitDatabase(m_Plugin),
+                _ => null
+            })!;
+
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+            if (m_Database == null)
             {
-                await m_Database.LoadDatabaseAsync();
-                await RegisterPermissionsAsync();
-            });
+                m_Database = new DataStoreKitDatabase(m_Plugin);
+                m_Logger.LogWarning(
+                    $"Unable to parse {m_Plugin.Configuration["database:connectionType"]}. Setting to default: `datastore`");
+            }
+
+            await m_Database!.LoadDatabaseAsync();
+            await RegisterPermissionsAsync();
         }
 
         public Task<IReadOnlyCollection<Kit>> GetKits()
@@ -54,10 +80,11 @@ namespace Kits.Providers
         public async Task<Kit?> GetKit(string kitName)
         {
             var kit = await m_Database.GetKitAsync(kitName);
-            if(kit?.Name is not null)
+            if (kit?.Name is not null)
             {
                 RegisterPermission(kit.Name);
             }
+
             return kit;
         }
 
@@ -70,7 +97,6 @@ namespace Kits.Providers
         {
             foreach (var kit in await m_Database.GetKitsAsync())
             {
-                Console.WriteLine(kit.Name ?? "na");
                 if (kit.Name != null)
                 {
                     RegisterPermission(kit.Name);
@@ -82,10 +108,11 @@ namespace Kits.Providers
         {
             m_PermissionRegistry.RegisterPermission(m_Plugin, "kits." + kitName.ToLower());
         }
-        
+
 
         public void Dispose()
         {
+            m_ConfigurationChangedWatcher?.Dispose();
             (m_Database as IDisposable)?.Dispose();
         }
     }
