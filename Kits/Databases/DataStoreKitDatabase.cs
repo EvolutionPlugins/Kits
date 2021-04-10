@@ -1,4 +1,6 @@
-﻿using Kits.API;
+﻿extern alias JetBrainsAnnotations;
+using JetBrainsAnnotations::JetBrains.Annotations;
+using Kits.API;
 using Kits.Models;
 using OpenMod.API.Commands;
 using OpenMod.Core.Helpers;
@@ -14,7 +16,7 @@ namespace Kits.Databases
         private const string c_KitsKey = "kits";
 
         private KitsData m_Data = null!;
-        private IDisposable? m_FileWatcher = null!;
+        private IDisposable? m_FileWatcher;
 
         public DataStoreKitDatabase(Kits plugin) : base(plugin)
         {
@@ -22,6 +24,11 @@ namespace Kits.Databases
 
         public async Task<bool> AddKitAsync(Kit kit)
         {
+            if (kit is null)
+            {
+                throw new ArgumentNullException(nameof(kit));
+            }
+
             if (m_Data.Kits.Any(x => x.Name?.Equals(kit.Name, StringComparison.OrdinalIgnoreCase) ?? false))
             {
                 throw new UserFriendlyException("Kit with the same name already exists");
@@ -34,7 +41,7 @@ namespace Kits.Databases
 
         public Task<Kit?> GetKitAsync(string name)
         {
-            return Task.FromResult(m_Data.Kits?.Find(x => x.Name?.Equals(name) == true));
+            return Task.FromResult(m_Data.Kits?.Find(x => x.Name?.Equals(name) ?? false));
         }
 
         public Task<IReadOnlyCollection<Kit>> GetKitsAsync()
@@ -44,6 +51,14 @@ namespace Kits.Databases
 
         public async Task LoadDatabaseAsync()
         {
+            await LoadFromDisk();
+
+            m_FileWatcher = Plugin.DataStore.AddChangeWatcher(c_KitsKey, Plugin,
+                () => AsyncHelper.RunSync(LoadFromDisk));
+        }
+
+        private async Task LoadFromDisk()
+        {
             if (await Plugin.DataStore.ExistsAsync(c_KitsKey))
             {
                 m_Data = await Plugin.DataStore.LoadAsync<KitsData>(c_KitsKey) ?? new() { Kits = new() };
@@ -52,9 +67,6 @@ namespace Kits.Databases
             {
                 m_Data = new() { Kits = new() };
             }
-
-            m_FileWatcher = Plugin.DataStore.AddChangeWatcher(c_KitsKey, Plugin,
-                () => AsyncHelper.RunSync(LoadDatabaseAsync));
         }
 
         public async Task<bool> RemoveKitAsync(string name)
@@ -82,7 +94,6 @@ namespace Kits.Databases
             if (index < 0)
             {
                 return false;
-                //throw new UserFriendlyException(StringLocalizer["commands:kit:update:fail", new { Name = name }]);
             }
 
             m_Data.Kits![index!.Value] = kit;

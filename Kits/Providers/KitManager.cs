@@ -76,22 +76,22 @@ namespace Kits.Providers
 
             await m_KitCooldownStore.RegisterCooldown(user, name, DateTime.Now);
 
-            var balance = await m_EconomyProvider.GetBalanceAsync(user.Id, user.Type);
-            if (kit.Cost != 0 && balance < kit.Cost)
-            {
-                var money = kit.Cost - balance;
-                throw new UserFriendlyException(m_StringLocalizer["commands:kit:noMoney",
-                    new
-                    {
-                        Kit = kit,
-                        Money = money,
-                        MoneyName = m_EconomyProvider.CurrencyName,
-                        MoneySymbol = m_EconomyProvider.CurrencySymbol
-                    }]);
-            }
-
             if (kit.Cost is not null && kit.Cost != 0)
             {
+                var balance = await m_EconomyProvider.GetBalanceAsync(user.Id, user.Type);
+                if (kit.Cost > balance)
+                {
+                    var money = kit.Cost - balance;
+                    throw new UserFriendlyException(m_StringLocalizer["commands:kit:noMoney",
+                        new
+                        {
+                            Kit = kit,
+                            Money = money,
+                            MoneyName = m_EconomyProvider.CurrencyName,
+                            MoneySymbol = m_EconomyProvider.CurrencySymbol
+                        }]);
+                }
+
                 await m_EconomyProvider.UpdateBalanceAsync(user.Id, user.Type, -kit.Cost.Value,
                     m_StringLocalizer["commands:kit:balanceUpdateReason:buy", new { Kit = kit }]);
             }

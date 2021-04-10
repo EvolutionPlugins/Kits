@@ -52,7 +52,7 @@ namespace Kits.Providers
             {
                 "mysql" => new MySQLKitDatabase(m_Plugin),
                 "datastore" => new DataStoreKitDatabase(m_Plugin),
-                _ => null
+                _ => null!
             })!;
 
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
