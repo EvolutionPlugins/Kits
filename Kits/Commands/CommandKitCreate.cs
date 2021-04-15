@@ -73,9 +73,9 @@ namespace Kits.Commands
                 Cooldown = (float)cooldown.TotalSeconds,
                 Items = items.Select(x => x.ConvertIItemToKitItem()).ToList(),
                 Name = name,
-                Cost = null,
-                Money = null,
-                VehicleId = null
+                Cost = cost,
+                Money = money,
+                VehicleId = vehicleId
             };
 
             UnturnedExtension.AddClothes(playerUser, kit.Items);

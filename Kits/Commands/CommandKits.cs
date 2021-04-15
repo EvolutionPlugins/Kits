@@ -14,6 +14,7 @@ namespace Kits.Commands
 {
     [Command("kits")]
     [RegisterCommandPermission("show.other")]
+    [CommandSyntax("[player]")]
     [UsedImplicitly]
     public class CommandKits : Command
     {

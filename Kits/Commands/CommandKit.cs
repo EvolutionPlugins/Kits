@@ -29,6 +29,7 @@ namespace Kits.Commands
 
             var isNotExecutor = giveKitUser != Context.Actor;
             var forceGiveKit = false;
+            var kitName = Context.Parameters.LastOrDefault() ?? throw new CommandWrongUsageException(Context);
             
             if (isNotExecutor)
             {
@@ -46,7 +47,6 @@ namespace Kits.Commands
                 }
             }
 
-            var kitName = Context.Parameters.Last();
             await m_KitManager.GiveKitAsync(giveKitUser, kitName, isNotExecutor ? Context.Actor : null, forceGiveKit);
         }
     }
