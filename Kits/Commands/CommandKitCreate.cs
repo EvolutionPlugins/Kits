@@ -17,7 +17,7 @@ namespace Kits.Commands
     [CommandAlias("+")]
     [CommandActor(typeof(IPlayerUser))]
     [CommandParent(typeof(CommandKit))]
-    [CommandSyntax("<name> [cooldown]")]
+    [CommandSyntax("<name> [cooldown] [cost] [money] [vehicleId]")]
     [UsedImplicitly]
     public class CommandKitCreate : Command
     {
@@ -33,7 +33,7 @@ namespace Kits.Commands
 
         protected override async Task OnExecuteAsync()
         {
-            if (Context.Parameters.Count < 1)
+            if (Context.Parameters.Count is < 1 or > 5)
             {
                 throw new CommandWrongUsageException(Context);
             }
@@ -47,11 +47,14 @@ namespace Kits.Commands
                 throw new UserFriendlyException("IPlayer doesn't have compatibility IHasInventory");
             }
 
-            var cooldown = TimeSpan.Zero;
-            if (Context.Parameters.Count > 1)
-            {
-                cooldown = await Context.Parameters.GetAsync<TimeSpan>(1);
-            }
+            var cooldown = Context.Parameters.Count >= 2
+                ? await Context.Parameters.GetAsync<TimeSpan>(1)
+                : TimeSpan.Zero;
+            var cost = Context.Parameters.Count >= 3 ? await Context.Parameters.GetAsync<decimal>(2) : 0;
+            var money = Context.Parameters.Count >= 4 ? await Context.Parameters.GetAsync<decimal>(3) : 0;
+            var vehicleId = Context.Parameters.Count == 5 ? Context.Parameters[4] : null;
+
+            var shouldForceCreate = cost != 0 || money != 0 || !string.IsNullOrEmpty(vehicleId);
 
             var kits = await m_KitStore.GetKits();
             if (kits.Any(x => x.Name?.Equals(name, StringComparison.OrdinalIgnoreCase) ?? false))
@@ -60,7 +63,7 @@ namespace Kits.Commands
             }
 
             var items = hasInventory.Inventory!.SelectMany(x => x.Items.Select(c => c.Item)).ToList();
-            if (items.Count == 0)
+            if (!shouldForceCreate && items.Count == 0)
             {
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:create:noItems"]);
             }
