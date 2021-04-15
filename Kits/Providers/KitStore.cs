@@ -51,7 +51,7 @@ namespace Kits.Providers
             var type = m_Plugin.Configuration["database:connectionType"];
             m_Database = (type.ToLower() switch
             {
-                "mysql" => new MySQLKitDatabase(m_Plugin),
+                "mysql" => new MySqlKitDatabase(m_Plugin),
                 "datastore" => new DataStoreKitDatabase(m_Plugin),
                 _ => null!
             })!;

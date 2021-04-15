@@ -4,7 +4,6 @@ using JetBrainsAnnotations::JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using OpenMod.API.Ioc;
 using OpenMod.API.Prioritization;
-using System;
 
 namespace Kits
 {

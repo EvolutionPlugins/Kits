@@ -5,15 +5,32 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
+using Autofac;
+using Microsoft.Extensions.Logging;
+using MySqlConnector.Logging;
 
 namespace Kits.Databases
 {
-    public sealed class MySQLKitDatabase : KitDatabaseCore, IKitDatabase
+    public sealed class MySqlKitDatabase : KitDatabaseCore, IKitDatabase, IDisposable
     {
+        private readonly ILogger<MySqlKitDatabase> m_Logger;
         private readonly MySqlConnection m_MySqlConnection;
 
-        public MySQLKitDatabase(Kits plugin) : base(plugin)
+        public MySqlKitDatabase(Kits plugin) : base(plugin)
         {
+            var loggerFactory = plugin.LifetimeScope.Resolve<ILoggerFactory>();
+            
+            try
+            {
+                MySqlConnectorLogManager.Provider = new MicrosoftExtensionsLoggingLoggerProvider(loggerFactory);
+                Console.WriteLine("sus");
+            }
+            catch(InvalidOperationException)
+            {
+                // already set up
+            }
+
+            m_Logger = loggerFactory.CreateLogger<MySqlKitDatabase>();
             m_MySqlConnection = new(Connection);
         }
 
@@ -38,7 +55,6 @@ namespace Kits.Databases
             }
             finally
             {
-                Console.WriteLine(m_MySqlConnection.State);
                 if (m_MySqlConnection.State == ConnectionState.Open)
                 {
                     await m_MySqlConnection.CloseAsync();
@@ -57,9 +73,7 @@ namespace Kits.Databases
             {
                 await m_MySqlConnection.OpenAsync();
                 await using var command = m_MySqlConnection.CreateCommand();
-                Console.WriteLine("a");
                 var bytes = kit.Items?.ConvertToByteArray() ?? Array.Empty<byte>();
-                Console.WriteLine("ab");
 
                 command.CommandText =
                     $"INSERT INTO `{TableName}` (`Name`, `Cooldown`, `Cost`, `Money`, `VehicleId`, `Items`) VALUES (@a, @b, @c, @d, @f, @e);";
@@ -71,12 +85,10 @@ namespace Kits.Databases
                 command.Parameters.AddWithValue("e", bytes);
 
                 var i = await command.ExecuteNonQueryAsync();
-                Console.WriteLine(i);
                 return true;
             }
             finally
             {
-                Console.WriteLine(m_MySqlConnection.State);
                 if (m_MySqlConnection.State == ConnectionState.Open)
                 {
                     await m_MySqlConnection.CloseAsync();
@@ -111,20 +123,24 @@ namespace Kits.Databases
                 {
                     Array.Clear(ConvertorExtension.s_Buffer, 0, ConvertorExtension.s_Buffer.Length);
 
-                    reader.GetBytes(4, 0, ConvertorExtension.s_Buffer, 0, ushort.MaxValue);
+                    if (!reader.IsDBNull(5))
+                    {
+                        reader.GetBytes(5, 0, ConvertorExtension.s_Buffer, 0, ushort.MaxValue);
+                    }
+
                     return new()
                     {
-                        Name = reader.GetString(0),
-                        Cooldown = reader.GetFloat(1),
-                        Cost = reader.GetDecimal(2),
-                        Money = reader.GetDecimal(3),
-                        Items = ConvertorExtension.ConvertToKitItems(ConvertorExtension.s_Buffer)
+                        Name = reader.IsDBNull(0) ? null : reader.GetString(0),
+                        Cooldown = reader.IsDBNull(1) ? null : reader.GetFloat(1),
+                        Cost = reader.IsDBNull(2) ? null : reader.GetDecimal(2),
+                        Money = reader.IsDBNull(3) ? null : reader.GetDecimal(3),
+                        VehicleId = reader.IsDBNull(4) ? null : reader.GetString(4),
+                        Items = ConvertorExtension.ConvertToKitItems(ConvertorExtension.s_Buffer, m_Logger)
                     };
                 }
             }
             finally
             {
-                Console.WriteLine(m_MySqlConnection.State);
                 if (m_MySqlConnection.State == ConnectionState.Open)
                 {
                     await m_MySqlConnection.CloseAsync();
@@ -139,7 +155,8 @@ namespace Kits.Databases
                 await m_MySqlConnection.OpenAsync();
                 await using var command = m_MySqlConnection.CreateCommand();
 
-                command.CommandText = $"SELECT `Name`, `Cooldown`, `Cost`, `Money`, `Items` FROM `{TableName}`;";
+                command.CommandText =
+                    $"SELECT `Name`, `Cooldown`, `Cost`, `Money`, `VehicleId`, `Items` FROM `{TableName}`;";
 
                 await using var reader = await command.ExecuteReaderAsync();
 
@@ -151,14 +168,19 @@ namespace Kits.Databases
                     {
                         Array.Clear(ConvertorExtension.s_Buffer, 0, ConvertorExtension.s_Buffer.Length);
 
-                        reader.GetBytes(4, 0, ConvertorExtension.s_Buffer, 0, ushort.MaxValue);
+                        if (!reader.IsDBNull(5))
+                        {
+                            reader.GetBytes(5, 0, ConvertorExtension.s_Buffer, 0, ushort.MaxValue);
+                        }
+
                         result.Add(new Kit()
                         {
-                            Name = reader.GetString(0),
-                            Cooldown = reader.GetFloat(1),
-                            Cost = reader.GetDecimal(2),
-                            Money = reader.GetDecimal(3),
-                            Items = ConvertorExtension.ConvertToKitItems(ConvertorExtension.s_Buffer)
+                            Name = reader.IsDBNull(0) ? null : reader.GetString(0),
+                            Cooldown = reader.IsDBNull(1) ? null : reader.GetFloat(1),
+                            Cost = reader.IsDBNull(2) ? null : reader.GetDecimal(2),
+                            Money = reader.IsDBNull(3) ? null : reader.GetDecimal(3),
+                            VehicleId = reader.IsDBNull(4) ? null : reader.GetString(4),
+                            Items = ConvertorExtension.ConvertToKitItems(ConvertorExtension.s_Buffer, m_Logger)
                         });
                     }
                 }
@@ -167,7 +189,6 @@ namespace Kits.Databases
             }
             finally
             {
-                Console.WriteLine(m_MySqlConnection.State);
                 if (m_MySqlConnection.State == ConnectionState.Open)
                 {
                     await m_MySqlConnection.CloseAsync();
@@ -191,12 +212,10 @@ namespace Kits.Databases
                 command.Parameters.AddWithValue("n", name);
 
                 var i = await command.ExecuteNonQueryAsync();
-                Console.WriteLine(i);
                 return i != 0;
             }
             finally
             {
-                Console.WriteLine(m_MySqlConnection.State);
                 if (m_MySqlConnection.State == ConnectionState.Open)
                 {
                     await m_MySqlConnection.CloseAsync();
@@ -227,7 +246,6 @@ namespace Kits.Databases
                 command.Parameters.AddWithValue("n", kit.Name);
 
                 var i = await command.ExecuteNonQueryAsync();
-                Console.WriteLine(i);
                 if (i != 0)
                 {
                     return true;
@@ -238,12 +256,16 @@ namespace Kits.Databases
             }
             finally
             {
-                Console.WriteLine(m_MySqlConnection.State);
                 if (m_MySqlConnection.State == ConnectionState.Open)
                 {
                     await m_MySqlConnection.CloseAsync();
                 }
             }
+        }
+
+        public void Dispose()
+        {
+            m_MySqlConnection.Dispose();
         }
     }
 }

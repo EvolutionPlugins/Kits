@@ -39,7 +39,7 @@ namespace Kits.Commands
                 throw new UserFriendlyException("Unable to load 'kits.data.yaml'");
             }
 
-            var mysql = new MySQLKitDatabase(m_Plugin);
+            var mysql = new MySqlKitDatabase(m_Plugin);
             await mysql.LoadDatabaseAsync();
             
             foreach (var kit in kits.Kits)

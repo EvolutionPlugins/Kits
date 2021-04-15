@@ -21,7 +21,7 @@ namespace Kits.Providers
     [UsedImplicitly]
     public class KitManager : IKitManager
     {
-        private readonly ILogger<Kits> m_Logger;
+        private readonly ILogger<KitManager> m_Logger;
         private readonly IEconomyProvider m_EconomyProvider;
         private readonly IKitCooldownStore m_KitCooldownStore;
         private readonly IKitStore m_KitStore;
@@ -31,7 +31,7 @@ namespace Kits.Providers
         private readonly IItemSpawner m_ItemSpawner;
         private readonly IVehicleSpawner m_VehicleSpawner;
 
-        public KitManager(ILogger<Kits> logger, IEconomyProvider economyProvider,
+        public KitManager(ILogger<KitManager> logger, IEconomyProvider economyProvider,
             IKitCooldownStore kitCooldownStore, IKitStore kitStore, IStringLocalizer stringLocalizer,
             IPermissionChecker permissionChecker, Kits plugin, IItemSpawner itemSpawner, IVehicleSpawner vehicleSpawner)
         {

@@ -1,8 +1,9 @@
-﻿using Kits.API;
-using OpenMod.Extensions.Games.Abstractions.Items;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Kits.API;
+using Microsoft.Extensions.Logging;
+using OpenMod.Extensions.Games.Abstractions.Items;
 
 namespace Kits.Extensions
 {
@@ -16,49 +17,70 @@ namespace Kits.Extensions
             return new(item.Asset.ItemAssetId, item.State);
         }
 
-        public static byte[] ConvertToByteArray(this IReadOnlyList<KitItem> items)
+        public static byte[] ConvertToByteArray(this IReadOnlyList<KitItem> items, ILogger? logger = null)
         {
             lock (s_Lock)
             {
-                Array.Clear(s_Buffer, 0, s_Buffer.Length);
-
-                using var stream = new MemoryStream(s_Buffer, true);
-                using var writer = new BinaryWriter(stream);
-
-                writer.Write(items.Count);
-                foreach (var item in items)
+                try
                 {
-                    writer.Write(item.ItemAssetId);
-                    writer.Write(item.State.ItemAmount);
-                    writer.Write(item.State.ItemDurability);
-                    writer.Write(item.State.ItemQuality);
-                    writer.Write(item.State.StateData.Length);
-                    writer.Write(item.State.StateData);
-                }
+                    Array.Clear(s_Buffer, 0, s_Buffer.Length);
+                    using var stream = new MemoryStream(s_Buffer, 0, s_Buffer.Length, true);
+                    using var writer = new BinaryWriter(stream);
 
-                return stream.ToArray();
+                    writer.Write(items.Count);
+                    foreach (var item in items)
+                    {
+                        writer.Write(item.ItemAssetId);
+                        writer.Write(item.State.ItemAmount);
+                        writer.Write(item.State.ItemDurability);
+                        writer.Write(item.State.ItemQuality);
+                        writer.Write(item.State.StateData.Length);
+                        writer.Write(item.State.StateData);
+                    }
+
+                    writer.Flush();
+
+                    return stream.ToArray();
+                }
+                catch (Exception e)
+                {
+                    logger?.LogError(e, "Failed to convert items to data byte array");
+                }
             }
+
+            return Array.Empty<byte>();
         }
 
-        public static List<KitItem> ConvertToKitItems(byte[] block)
+        public static List<KitItem> ConvertToKitItems(byte[] block, ILogger? logger = null)
         {
-            using var stream = new MemoryStream(block, false);
-            using var reader = new BinaryReader(stream);
-            var list = new List<KitItem>(reader.ReadInt32());
+            var list = new List<KitItem>();
 
-            for (var i = 0; i < list.Capacity; i++)
+            try
             {
-                list.Add(new()
+                using var stream = new MemoryStream(block, false);
+                using var reader = new BinaryReader(stream);
+
+                var count = reader.ReadInt32();
+
+                for (var i = 0; i < count; i++)
                 {
-                    ItemAssetId = reader.ReadString(),
-                    State = new()
+                    list.Add(new()
                     {
-                        ItemAmount = reader.ReadDouble(),
-                        ItemDurability = reader.ReadDouble(),
-                        ItemQuality = reader.ReadDouble(),
-                        StateData = reader.ReadBytes(reader.ReadInt32())
-                    }
-                });
+                        ItemAssetId = reader.ReadString(),
+                        State = new()
+                        {
+                            ItemAmount = reader.ReadDouble(),
+                            ItemDurability = reader.ReadDouble(),
+                            ItemQuality = reader.ReadDouble(),
+                            StateData = reader.ReadBytes(reader.ReadInt32())
+                        }
+                    });
+                }
+            }
+            catch (Exception e)
+            {
+                logger?.LogError(e, "Error occur on deserializing the data");
+                logger?.LogDebug("Hash data: {Data}", Convert.ToBase64String(block));
             }
 
             return list;
