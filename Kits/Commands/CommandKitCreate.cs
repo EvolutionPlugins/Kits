@@ -1,4 +1,7 @@
-﻿using JetBrains.Annotations;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Kits.API;
 using Kits.Extensions;
 using Microsoft.Extensions.Localization;
@@ -6,9 +9,6 @@ using OpenMod.API.Commands;
 using OpenMod.Core.Commands;
 using OpenMod.Extensions.Games.Abstractions.Items;
 using OpenMod.Extensions.Games.Abstractions.Players;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Kits.Commands
 {
@@ -70,9 +70,9 @@ namespace Kits.Commands
                 Cooldown = (float)cooldown.TotalSeconds,
                 Items = items.Select(x => x.ConvertIItemToKitItem()).ToList(),
                 Name = name,
-                Cost = 0,
-                Money = 0,
-                VehicleId = string.Empty
+                Cost = null,
+                Money = null,
+                VehicleId = null
             };
 
             UnturnedExtension.AddClothes(playerUser, kit.Items);

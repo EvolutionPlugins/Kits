@@ -1,36 +1,23 @@
-﻿using Kits.API;
-using Kits.Extensions;
-using MySqlConnector;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
 using Autofac;
+using Kits.API;
+using Kits.Extensions;
 using Microsoft.Extensions.Logging;
-using MySqlConnector.Logging;
+using MySqlConnector;
 
 namespace Kits.Databases
 {
-    public sealed class MySqlKitDatabase : KitDatabaseCore, IKitDatabase, IDisposable
+    public sealed class MySqlKitDatabase : KitDatabaseCore, IKitDatabase, IAsyncDisposable
     {
         private readonly ILogger<MySqlKitDatabase> m_Logger;
         private readonly MySqlConnection m_MySqlConnection;
 
         public MySqlKitDatabase(Kits plugin) : base(plugin)
         {
-            var loggerFactory = plugin.LifetimeScope.Resolve<ILoggerFactory>();
-            
-            try
-            {
-                MySqlConnectorLogManager.Provider = new MicrosoftExtensionsLoggingLoggerProvider(loggerFactory);
-                Console.WriteLine("sus");
-            }
-            catch(InvalidOperationException)
-            {
-                // already set up
-            }
-
-            m_Logger = loggerFactory.CreateLogger<MySqlKitDatabase>();
+            m_Logger = plugin.LifetimeScope.Resolve<ILogger<MySqlKitDatabase>>();
             m_MySqlConnection = new(Connection);
         }
 
@@ -43,10 +30,10 @@ namespace Kits.Databases
 
                 command.CommandText = $@"CREATE TABLE IF NOT EXISTS `{TableName}` (
 	                `Name` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_unicode_ci',
-	                `Cooldown` FLOAT(12,0) NOT NULL DEFAULT '0',
-            	    `Cost` DECIMAL(10,0) NOT NULL DEFAULT '0',
-            	    `Money` DECIMAL(10,0) NOT NULL DEFAULT '0',
-                    `VehicleId` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_unicode_ci',
+	                `Cooldown` FLOAT(12,0) NULL DEFAULT NULL,
+            	    `Cost` DECIMAL(10,0) NULL DEFAULT NULL,
+            	    `Money` DECIMAL(10,0) NULL DEFAULT NULL,
+                    `VehicleId` VARCHAR(255) NULL COLLATE 'utf8mb4_unicode_ci' DEFAULT NULL,
             	    `Items` BLOB NULL DEFAULT NULL,
             	    PRIMARY KEY (`Name`)
                 );";
@@ -109,7 +96,7 @@ namespace Kits.Databases
                 await using var command = m_MySqlConnection.CreateCommand();
 
                 command.CommandText =
-                    $"SELECT `Name`, `Cooldown`, `Cost`, `Money`, `Items` FROM `{TableName}` WHERE `Name` = @n;";
+                    $"SELECT `Name`, `Cooldown`, `Cost`, `Money`, `VehicleId`, `Items` FROM `{TableName}` WHERE `Name` = @n;";
                 command.Parameters.AddWithValue("n", name);
 
                 await using var reader = await command.ExecuteReaderAsync();
@@ -238,11 +225,12 @@ namespace Kits.Databases
                 var bytes = kit.Items?.ConvertToByteArray() ?? Array.Empty<byte>();
 
                 command.CommandText =
-                    $"UPDATE `{TableName}` SET `Cooldown`=@a, `Cost`=@b, `Money`=@c, `Items`=@d WHERE `Name` = @n;";
+                    $"UPDATE `{TableName}` SET `Cooldown`=@a, `Cost`=@b, `Money`=@c, `VehicleId`=@f, `Items`=@d WHERE `Name` = @n;";
                 command.Parameters.AddWithValue("a", kit.Cooldown);
                 command.Parameters.AddWithValue("b", kit.Cost);
                 command.Parameters.AddWithValue("c", kit.Money);
                 command.Parameters.AddWithValue("d", bytes);
+                command.Parameters.AddWithValue("f", kit.VehicleId);
                 command.Parameters.AddWithValue("n", kit.Name);
 
                 var i = await command.ExecuteNonQueryAsync();
@@ -263,9 +251,9 @@ namespace Kits.Databases
             }
         }
 
-        public void Dispose()
+        public ValueTask DisposeAsync()
         {
-            m_MySqlConnection.Dispose();
+            return new(m_MySqlConnection.DisposeAsync());
         }
     }
 }

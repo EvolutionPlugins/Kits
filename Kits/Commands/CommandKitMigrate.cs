@@ -1,4 +1,6 @@
 ﻿extern alias JetBrainsAnnotations;
+using System;
+using System.Threading.Tasks;
 using JetBrainsAnnotations::JetBrains.Annotations;
 using Kits.Databases;
 using Kits.Models;
@@ -6,8 +8,6 @@ using OpenMod.API.Commands;
 using OpenMod.API.Persistence;
 using OpenMod.Core.Commands;
 using OpenMod.Core.Console;
-using System;
-using System.Threading.Tasks;
 
 namespace Kits.Commands
 {

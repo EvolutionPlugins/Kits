@@ -1,13 +1,12 @@
 ﻿extern alias JetBrainsAnnotations;
-using JetBrainsAnnotations::JetBrains.Annotations;
-using Kits.API;
-using Kits.Models;
-using OpenMod.API.Commands;
-using OpenMod.Core.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Kits.API;
+using Kits.Models;
+using OpenMod.API.Commands;
+using OpenMod.Core.Helpers;
 
 namespace Kits.Databases
 {

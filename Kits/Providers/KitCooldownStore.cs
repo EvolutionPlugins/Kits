@@ -1,4 +1,6 @@
-﻿using JetBrains.Annotations;
+﻿using System;
+using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Kits.API;
 using Kits.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,8 +9,6 @@ using OpenMod.API.Permissions;
 using OpenMod.API.Persistence;
 using OpenMod.Core.Helpers;
 using OpenMod.Extensions.Games.Abstractions.Players;
-using System;
-using System.Threading.Tasks;
 
 namespace Kits.Providers
 {

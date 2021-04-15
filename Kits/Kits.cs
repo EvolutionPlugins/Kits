@@ -1,9 +1,9 @@
-﻿using JetBrains.Annotations;
+﻿using System;
+using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using OpenMod.API.Plugins;
 using OpenMod.Core.Plugins;
-using System;
-using System.Threading.Tasks;
 
 [assembly: PluginMetadata("Kits", DisplayName = "Kits", Author = "EvolutionPlugins",
     Website = "https://discord.gg/6KymqGv")]

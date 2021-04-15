@@ -1,6 +1,6 @@
-﻿using OpenMod.API.Ioc;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using OpenMod.API.Ioc;
 
 namespace Kits.API
 {

@@ -1,5 +1,5 @@
-﻿using OpenMod.Extensions.Games.Abstractions.Items;
-using System;
+﻿using System;
+using OpenMod.Extensions.Games.Abstractions.Items;
 
 namespace Kits.API
 {

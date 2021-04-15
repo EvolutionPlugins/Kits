@@ -1,4 +1,7 @@
-﻿using JetBrains.Annotations;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Kits.API;
 using Kits.Databases;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,15 +11,12 @@ using OpenMod.API.Ioc;
 using OpenMod.API.Permissions;
 using OpenMod.Core.Helpers;
 using OpenMod.Core.Plugins.Events;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Kits.Providers
 {
     [PluginServiceImplementation(Lifetime = ServiceLifetime.Singleton)]
     [UsedImplicitly]
-    public class KitStore : IKitStore, IDisposable
+    public class KitStore : IKitStore, IAsyncDisposable
     {
         public const string c_KitsKey = "kits";
 
@@ -118,10 +118,10 @@ namespace Kits.Providers
         }
 
 
-        public void Dispose()
+        public ValueTask DisposeAsync()
         {
             m_ConfigurationChangedWatcher?.Dispose();
-            (m_Database as IDisposable)?.Dispose();
+            return new(m_Database.DisposeSyncOrAsync());
         }
     }
 }

@@ -1,9 +1,9 @@
-﻿using JetBrains.Annotations;
+﻿using System;
+using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Kits.API;
 using Microsoft.Extensions.Localization;
 using OpenMod.Core.Commands;
-using System;
-using System.Threading.Tasks;
 
 namespace Kits.Commands
 {

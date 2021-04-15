@@ -1,8 +1,8 @@
-﻿using Kits.API;
+﻿using System;
+using System.Threading.Tasks;
+using Kits.API;
 using OpenMod.Core.Commands;
 using OpenMod.Extensions.Games.Abstractions.Players;
-using System;
-using System.Threading.Tasks;
 
 namespace Kits.Commands
 {

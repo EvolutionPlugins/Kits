@@ -1,4 +1,7 @@
-﻿using JetBrains.Annotations;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Kits.API;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
@@ -11,9 +14,6 @@ using OpenMod.Extensions.Economy.Abstractions;
 using OpenMod.Extensions.Games.Abstractions.Items;
 using OpenMod.Extensions.Games.Abstractions.Players;
 using OpenMod.Extensions.Games.Abstractions.Vehicles;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Kits.Providers
 {
