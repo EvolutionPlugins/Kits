@@ -8,7 +8,10 @@ using OpenMod.API.Ioc;
 using OpenMod.API.Permissions;
 using OpenMod.API.Persistence;
 using OpenMod.Core.Helpers;
+using OpenMod.Core.Permissions;
 using OpenMod.Extensions.Games.Abstractions.Players;
+
+[assembly: RegisterPermission("nocooldown", Description = "Allows use kit without waiting for cooldown")]
 
 namespace Kits.Providers
 {
@@ -21,34 +24,40 @@ namespace Kits.Providers
 
         private readonly IDataStore m_DataStore;
         private readonly Kits m_Plugin;
+        private readonly IPermissionChecker m_PermissionChecker;
 
         private KitsCooldownData m_KitsCooldownData = null!;
         private IDisposable? m_FileWatcher = null!;
 
-        public KitCooldownStore(Kits plugin, IPermissionRegistry permissionRegistry)
+        public KitCooldownStore(Kits plugin, IPermissionRegistry permissionRegistry,
+            IPermissionChecker permissionChecker)
         {
             m_DataStore = plugin.DataStore;
             m_Plugin = plugin;
-
-            permissionRegistry.RegisterPermission(plugin, c_NoCooldownPermission,
-                "Allows use kit without waiting for cooldown");
+            m_PermissionChecker = permissionChecker;
 
             AsyncHelper.RunSync(LoadData);
         }
 
-        public Task<TimeSpan?> GetLastCooldown(IPlayerUser player, string kitName)
+        public async Task<TimeSpan?> GetLastCooldown(IPlayerUser player, string kitName)
         {
-            if (!m_KitsCooldownData.KitsCooldown!.TryGetValue(player.Id, out var kitCooldowns))
+            if (await m_PermissionChecker.CheckPermissionAsync(player, c_NoCooldownPermission) == PermissionGrantResult.Grant
+                || !m_KitsCooldownData.KitsCooldown!.TryGetValue(player.Id, out var kitCooldowns))
             {
-                return Task.FromResult<TimeSpan?>(null);
+                return null;
             }
 
             var kitCooldown = kitCooldowns!.Find(x => x.KitName == kitName);
-            return Task.FromResult<TimeSpan?>(kitCooldown == null ? null : DateTime.Now - kitCooldown.KitCooldown);
+            return kitCooldown == null ? null : DateTime.Now - kitCooldown.KitCooldown;
         }
 
         public async Task RegisterCooldown(IPlayerUser player, string kitName, DateTime time)
         {
+            if (await m_PermissionChecker.CheckPermissionAsync(player, c_NoCooldownPermission) == PermissionGrantResult.Grant)
+            {
+                return;
+            }
+
             if (m_KitsCooldownData.KitsCooldown!.TryGetValue(player.Id, out var kitCooldowns))
             {
                 var kitCooldown = kitCooldowns!.Find(x => x.KitName == kitName)

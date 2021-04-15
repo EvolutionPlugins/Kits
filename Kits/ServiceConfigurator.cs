@@ -22,7 +22,6 @@ namespace Kits
             try
             {
                 MySqlConnectorLogManager.Provider = new SerilogLoggerProviderEx();
-                Console.WriteLine("sus");
             }
             catch (InvalidOperationException)
             {
