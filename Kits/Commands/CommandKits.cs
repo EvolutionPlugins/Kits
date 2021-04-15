@@ -4,14 +4,16 @@ using EvolutionPlugins.Economy.Stub.Services;
 using JetBrains.Annotations;
 using Kits.API;
 using Microsoft.Extensions.Localization;
+using OpenMod.API.Permissions;
 using OpenMod.Core.Commands;
+using OpenMod.Core.Permissions;
 using OpenMod.Extensions.Economy.Abstractions;
 using OpenMod.Extensions.Games.Abstractions.Players;
 
 namespace Kits.Commands
 {
     [Command("kits")]
-    [CommandActor(typeof(IPlayerUser))]
+    [RegisterCommandPermission("show.other")]
     [UsedImplicitly]
     public class CommandKits : Command
     {
@@ -29,7 +31,14 @@ namespace Kits.Commands
 
         protected override async Task OnExecuteAsync()
         {
-            var playerUser = (IPlayerUser)Context.Actor;
+            var showKitsUser = (Context.Parameters.Count == 1 ? await Context.Parameters.GetAsync<IPlayerUser>(0)
+                : Context.Actor as IPlayerUser) ?? throw new CommandWrongUsageException(Context);
+
+            var isNotExecutor = showKitsUser != Context.Actor;
+            if (isNotExecutor && await CheckPermissionAsync("show.other") != PermissionGrantResult.Grant)
+            {
+                throw new NotEnoughPermissionException(Context, "show.other");
+            }
 
             var moneySymbol = "$";
             var moneyName = string.Empty;
@@ -41,7 +50,7 @@ namespace Kits.Commands
                 moneyName = m_EconomyProvider.CurrencyName;
             }
 
-            var kits = await m_KitManager.GetAvailablePlayerKits(playerUser);
+            var kits = await m_KitManager.GetAvailablePlayerKits(showKitsUser);
             kits = kits.Count > 0 ? kits : null;
 
             await PrintAsync(m_StringLocalizer["commands:kits", new
