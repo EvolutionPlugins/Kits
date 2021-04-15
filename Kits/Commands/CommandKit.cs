@@ -11,8 +11,8 @@ namespace Kits.Commands
 {
     [Command("kit")]
     [CommandSyntax("[create|remove] [player] <name>")]
-    [RegisterCommandPermission("give.other")] // will check if player has permission to get kit
-    [RegisterCommandPermission("give.other.force")] // will not check if player has permission, money, etc.. to get kit
+    [RegisterCommandPermission("give.other", Description = "Give the kit to another player but it will checks if another player has permission, money, etc..")] // will check if player has permission to get kit
+    [RegisterCommandPermission("give.other.force", Description = "Force give the kit to another player without checks if the player has permission, money, etc..")] // will not check if player has permission, money, etc.. to get kit
     public class CommandKit : Command
     {
         private readonly IKitManager m_KitManager;

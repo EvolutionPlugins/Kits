@@ -13,7 +13,7 @@ using OpenMod.Extensions.Games.Abstractions.Players;
 namespace Kits.Commands
 {
     [Command("kits")]
-    [RegisterCommandPermission("show.other")]
+    [RegisterCommandPermission("show.other", Description = "Shows the available kits of another player")]
     [CommandSyntax("[player]")]
     [UsedImplicitly]
     public class CommandKits : Command
