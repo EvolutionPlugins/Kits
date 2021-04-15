@@ -10,6 +10,7 @@ using OpenMod.API.Commands;
 using OpenMod.API.Ioc;
 using OpenMod.API.Permissions;
 using OpenMod.API.Prioritization;
+using OpenMod.Core.Commands;
 using OpenMod.Extensions.Economy.Abstractions;
 using OpenMod.Extensions.Games.Abstractions.Items;
 using OpenMod.Extensions.Games.Abstractions.Players;
@@ -46,7 +47,8 @@ namespace Kits.Providers
             m_VehicleSpawner = vehicleSpawner;
         }
 
-        public async Task GiveKitAsync(IPlayerUser user, string name)
+        public async Task GiveKitAsync(IPlayerUser user, string name, ICommandActor? instigator = null,
+            bool forceGiveKit = false)
         {
             if (user.Player is not IHasInventory inventory)
             {
@@ -61,14 +63,14 @@ namespace Kits.Providers
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:notFound", new { Name = name }]);
             }
 
-            if (await m_PermissionChecker.CheckPermissionAsync(user,
+            if (!forceGiveKit && await m_PermissionChecker.CheckPermissionAsync(user,
                 $"{m_Plugin.OpenModComponentId}:{KitStore.c_KitsKey}.{kit.Name}") != PermissionGrantResult.Grant)
             {
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:noPermission", new { Kit = kit }]);
             }
 
             var cooldown = await m_KitCooldownStore.GetLastCooldown(user, name);
-            if (cooldown != null)
+            if (!forceGiveKit && cooldown != null)
             {
                 if (cooldown.Value.TotalSeconds < kit.Cooldown)
                 {
@@ -79,20 +81,21 @@ namespace Kits.Providers
 
             await m_KitCooldownStore.RegisterCooldown(user, name, DateTime.Now);
 
-            if (kit.Cost is not null && kit.Cost != 0)
+            if (!forceGiveKit && kit.Cost is not null && kit.Cost != 0)
             {
                 var balance = await m_EconomyProvider.GetBalanceAsync(user.Id, user.Type);
                 if (kit.Cost > balance)
                 {
                     var money = kit.Cost - balance;
-                    throw new UserFriendlyException(m_StringLocalizer["commands:kit:noMoney",
+
+                    throw new NotEnoughBalanceException(m_StringLocalizer["commands:kit:noMoney",
                         new
                         {
                             Kit = kit,
                             Money = money,
                             MoneyName = m_EconomyProvider.CurrencyName,
                             MoneySymbol = m_EconomyProvider.CurrencySymbol
-                        }]);
+                        }], balance);
                 }
 
                 await m_EconomyProvider.UpdateBalanceAsync(user.Id, user.Type, -kit.Cost.Value,
@@ -123,12 +126,17 @@ namespace Kits.Providers
                 }
             }
 
-            if (kit.VehicleId is not null)
+            if (!string.IsNullOrEmpty(kit.VehicleId))
             {
-                await m_VehicleSpawner.SpawnVehicleAsync(user.Player, kit.VehicleId);
+                await m_VehicleSpawner.SpawnVehicleAsync(user.Player, kit.VehicleId!);
             }
 
             await user.PrintMessageAsync(m_StringLocalizer["commands:kit:success", new { Kit = kit }]);
+
+            if (instigator != null)
+            {
+                await instigator.PrintMessageAsync(m_StringLocalizer["commands:kit:success", new { Kit = kit }]);
+            }
         }
 
         public async Task<IReadOnlyCollection<Kit>> GetAvailablePlayerKits(IPlayerUser player)

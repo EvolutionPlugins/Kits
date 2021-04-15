@@ -1,13 +1,18 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Kits.API;
+using OpenMod.API.Permissions;
 using OpenMod.Core.Commands;
+using OpenMod.Core.Permissions;
 using OpenMod.Extensions.Games.Abstractions.Players;
 
 namespace Kits.Commands
 {
     [Command("kit")]
-    [CommandSyntax("[create|remove] <name>")]
+    [CommandSyntax("[create|remove] [player] <name>")]
+    [RegisterCommandPermission("give.other")] // will check if player has permission to get kit
+    [RegisterCommandPermission("give.other.force")] // will not check if player has permission, money, etc.. to get kit
     public class CommandKit : Command
     {
         private readonly IKitManager m_KitManager;
@@ -17,20 +22,32 @@ namespace Kits.Commands
             m_KitManager = kitManager;
         }
 
-        protected override Task OnExecuteAsync()
+        protected override async Task OnExecuteAsync()
         {
-            if (Context.Parameters.Count != 1)
+            var giveKitUser = (Context.Parameters.Count == 2 ? await Context.Parameters.GetAsync<IPlayerUser>(0)
+                    : Context.Actor as IPlayerUser) ?? throw new CommandWrongUsageException(Context);
+
+            var isNotExecutor = giveKitUser != Context.Actor;
+            var forceGiveKit = false;
+            
+            if (isNotExecutor)
             {
-                throw new CommandWrongUsageException(Context);
+                if (await CheckPermissionAsync("give.other.force") == PermissionGrantResult.Grant)
+                {
+                    forceGiveKit = true;
+                }
+                else if (await CheckPermissionAsync("give.other") != PermissionGrantResult.Grant)
+                {
+                    throw new NotEnoughPermissionException(Context, "give.other");
+                }
+                else
+                {
+                    throw new NotEnoughPermissionException(Context, "give.other.force");
+                }
             }
 
-            if (Context.Actor is not IPlayerUser playerUser)
-            {
-                throw new CommandWrongUsageException(Context);
-            }
-
-            var kitName = Context.Parameters[0];
-            return m_KitManager.GiveKitAsync(playerUser, kitName);
+            var kitName = Context.Parameters.Last();
+            await m_KitManager.GiveKitAsync(giveKitUser, kitName, isNotExecutor ? Context.Actor : null, forceGiveKit);
         }
     }
 }
