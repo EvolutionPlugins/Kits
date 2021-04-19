@@ -4,6 +4,7 @@ using EvolutionPlugins.Economy.Stub.Services;
 using JetBrains.Annotations;
 using Kits.API;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging;
 using OpenMod.API.Permissions;
 using OpenMod.Core.Commands;
 using OpenMod.Core.Permissions;
@@ -21,13 +22,15 @@ namespace Kits.Commands
         private readonly IKitManager m_KitManager;
         private readonly IStringLocalizer m_StringLocalizer;
         private readonly IEconomyProvider m_EconomyProvider;
+        private readonly ILogger<Kits> m_Logger;
 
         public CommandKits(IServiceProvider serviceProvider, IKitManager kitManager, IStringLocalizer stringLocalizer,
-            IEconomyProvider economyProvider) : base(serviceProvider)
+            IEconomyProvider economyProvider, ILogger<Kits> logger) : base(serviceProvider)
         {
             m_KitManager = kitManager;
             m_StringLocalizer = stringLocalizer;
             m_EconomyProvider = economyProvider;
+            m_Logger = logger;
         }
 
         protected override async Task OnExecuteAsync()
@@ -43,12 +46,19 @@ namespace Kits.Commands
 
             var moneySymbol = "$";
             var moneyName = string.Empty;
-            
-            // prevent some exceptions
-            if (m_EconomyProvider is not EconomyProviderStub)
+
+            try
             {
-                moneySymbol = m_EconomyProvider.CurrencySymbol;
-                moneyName = m_EconomyProvider.CurrencyName;
+                // prevent some exceptions
+                if (m_EconomyProvider is not EconomyProviderStub)
+                {
+                    moneySymbol = m_EconomyProvider.CurrencySymbol;
+                    moneyName = m_EconomyProvider.CurrencyName;
+                }
+            }
+            catch (Exception e)
+            {
+                m_Logger.LogWarning(e, "Failed to get currency symbol and currency name");
             }
 
             var kits = await m_KitManager.GetAvailablePlayerKits(showKitsUser);
