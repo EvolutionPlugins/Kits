@@ -41,27 +41,34 @@ namespace Kits.Providers
 
         public async Task<TimeSpan?> GetLastCooldown(IPlayerUser player, string kitName)
         {
-            if (await m_PermissionChecker.CheckPermissionAsync(player, c_NoCooldownPermission) == PermissionGrantResult.Grant
+            if (await m_PermissionChecker.CheckPermissionAsync(player, c_NoCooldownPermission) ==
+                PermissionGrantResult.Grant
                 || !m_KitsCooldownData.KitsCooldown!.TryGetValue(player.Id, out var kitCooldowns))
             {
                 return null;
             }
 
-            var kitCooldown = kitCooldowns!.Find(x => x.KitName == kitName);
+            var kitCooldown = kitCooldowns!.Find(x => x.KitName == kitName.ToLower());
             return kitCooldown == null ? null : DateTime.Now - kitCooldown.KitCooldown;
         }
 
         public async Task RegisterCooldown(IPlayerUser player, string kitName, DateTime time)
         {
-            if (await m_PermissionChecker.CheckPermissionAsync(player, c_NoCooldownPermission) == PermissionGrantResult.Grant)
+            if (await m_PermissionChecker.CheckPermissionAsync(player, c_NoCooldownPermission) ==
+                PermissionGrantResult.Grant)
             {
                 return;
             }
 
             if (m_KitsCooldownData.KitsCooldown!.TryGetValue(player.Id, out var kitCooldowns))
             {
-                var kitCooldown = kitCooldowns!.Find(x => x.KitName == kitName)
-                                  ?? new() { KitName = kitName, KitCooldown = time };
+                var kitCooldown = kitCooldowns!.Find(x => x.KitName == kitName);
+                if (kitCooldown == null)
+                {
+                    kitCooldown = new() { KitName = kitName };
+                    kitCooldowns.Add(kitCooldown);
+                }
+
                 kitCooldown.KitCooldown = time;
             }
             else
