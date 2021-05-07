@@ -22,10 +22,10 @@ namespace Kits.Commands
         private readonly IKitManager m_KitManager;
         private readonly IStringLocalizer m_StringLocalizer;
         private readonly IEconomyProvider m_EconomyProvider;
-        private readonly ILogger<Kits> m_Logger;
+        private readonly ILogger<CommandKits> m_Logger;
 
         public CommandKits(IServiceProvider serviceProvider, IKitManager kitManager, IStringLocalizer stringLocalizer,
-            IEconomyProvider economyProvider, ILogger<Kits> logger) : base(serviceProvider)
+            IEconomyProvider economyProvider, ILogger<CommandKits> logger) : base(serviceProvider)
         {
             m_KitManager = kitManager;
             m_StringLocalizer = stringLocalizer;

@@ -50,6 +50,7 @@ namespace Kits.Providers
         public async Task GiveKitAsync(IPlayerUser user, string name, ICommandActor? instigator = null,
             bool forceGiveKit = false)
         {
+            // ReSharper disable once SuspiciousTypeConversion.Global
             if (user.Player is not IHasInventory inventory)
             {
                 throw new UserFriendlyException("IPlayer doesn't have compatibility IHasInventory");

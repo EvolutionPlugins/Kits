@@ -59,7 +59,7 @@ namespace Kits.Commands
             var kits = await m_KitStore.GetKits();
             if (kits.Any(x => x.Name?.Equals(name, StringComparison.OrdinalIgnoreCase) ?? false))
             {
-                throw new UserFriendlyException(m_StringLocalizer["commands:kit:exist"]);
+                throw new UserFriendlyException(m_StringLocalizer["commands:kit:exist", new { Name = name }]);
             }
 
             var items = hasInventory.Inventory!.SelectMany(x => x.Items.Select(c => c.Item)).ToList();
