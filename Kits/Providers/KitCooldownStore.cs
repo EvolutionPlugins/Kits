@@ -48,7 +48,8 @@ namespace Kits.Providers
                 return null;
             }
 
-            var kitCooldown = kitCooldowns!.Find(x => x.KitName == kitName.ToLower());
+            var kitCooldown = kitCooldowns!.Find(x =>
+                x.KitName is not null && x.KitName.Equals(kitName, StringComparison.CurrentCultureIgnoreCase));
             return kitCooldown == null ? null : DateTime.Now - kitCooldown.KitCooldown;
         }
 
@@ -59,6 +60,8 @@ namespace Kits.Providers
             {
                 return;
             }
+
+            kitName = kitName.ToLower();
 
             if (m_KitsCooldownData.KitsCooldown!.TryGetValue(player.Id, out var kitCooldowns))
             {
