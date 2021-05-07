@@ -28,17 +28,26 @@ namespace Kits.Databases
                 await m_MySqlConnection.OpenAsync();
                 await using var command = m_MySqlConnection.CreateCommand();
 
-                command.CommandText = $@"CREATE TABLE IF NOT EXISTS `{TableName}` (
+                command.CommandText = $@"CREATE TABLE `kits` (
+	                `Id` INT(11) NOT NULL AUTO_INCREMENT,
 	                `Name` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_unicode_ci',
 	                `Cooldown` FLOAT(12,0) NULL DEFAULT NULL,
-            	    `Cost` DECIMAL(10,0) NULL DEFAULT NULL,
-            	    `Money` DECIMAL(10,0) NULL DEFAULT NULL,
-                    `VehicleId` VARCHAR(255) NULL COLLATE 'utf8mb4_unicode_ci' DEFAULT NULL,
-            	    `Items` BLOB NULL DEFAULT NULL,
-            	    PRIMARY KEY (`Name`)
-                );";
+	                `Cost` DECIMAL(10,0) NULL DEFAULT NULL,
+	                `Money` DECIMAL(10,0) NULL DEFAULT NULL,
+	                `VehicleId` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
+	                `Items` BLOB NULL DEFAULT NULL,
+	                PRIMARY KEY (`Id`) USING BTREE);";
 
-                await command.ExecuteNonQueryAsync();
+                var i = await command.ExecuteNonQueryAsync();
+                Console.WriteLine(i);
+
+                await using var command1 = m_MySqlConnection.CreateCommand();
+
+                command1.CommandText = $@"ALTER TABLE `{TableName}`
+	                ADD COLUMN `Id` INT(11) NOT NULL AUTO_INCREMENT FIRST,
+	                ADD PRIMARY KEY (`Id`);";
+
+                await command1.ExecuteNonQueryAsync();
             }
             finally
             {
@@ -96,8 +105,8 @@ namespace Kits.Databases
                 await using var command = m_MySqlConnection.CreateCommand();
 
                 command.CommandText =
-                    $"SELECT `Name`, `Cooldown`, `Cost`, `Money`, `VehicleId`, `Items` FROM `{TableName}` WHERE `Name` = @n;";
-                command.Parameters.AddWithValue("n", name);
+                    $"SELECT * FROM `{TableName}` WHERE LOWER(`Name`) LIKE @n; ";
+                command.Parameters.AddWithValue("n", name.ToLower());
 
                 await using var reader = await command.ExecuteReaderAsync();
                 if (!await reader.ReadAsync())
@@ -110,18 +119,18 @@ namespace Kits.Databases
                 {
                     Array.Clear(ConvertorExtension.s_Buffer, 0, ConvertorExtension.s_Buffer.Length);
 
-                    if (!reader.IsDBNull(5))
+                    if (!reader.IsDBNull(6))
                     {
-                        reader.GetBytes(5, 0, ConvertorExtension.s_Buffer, 0, ushort.MaxValue);
+                        reader.GetBytes(6, 0, ConvertorExtension.s_Buffer, 0, ushort.MaxValue);
                     }
 
                     return new()
                     {
-                        Name = reader.IsDBNull(0) ? null : reader.GetString(0),
-                        Cooldown = reader.IsDBNull(1) ? null : reader.GetFloat(1),
-                        Cost = reader.IsDBNull(2) ? null : reader.GetDecimal(2),
-                        Money = reader.IsDBNull(3) ? null : reader.GetDecimal(3),
-                        VehicleId = reader.IsDBNull(4) ? null : reader.GetString(4),
+                        Name = reader.IsDBNull(1) ? null : reader.GetString(1),
+                        Cooldown = reader.IsDBNull(2) ? null : reader.GetFloat(2),
+                        Cost = reader.IsDBNull(3) ? null : reader.GetDecimal(3),
+                        Money = reader.IsDBNull(4) ? null : reader.GetDecimal(4),
+                        VehicleId = reader.IsDBNull(5) ? null : reader.GetString(5),
                         Items = ConvertorExtension.ConvertToKitItems(ConvertorExtension.s_Buffer, m_Logger)
                     };
                 }
@@ -143,7 +152,7 @@ namespace Kits.Databases
                 await using var command = m_MySqlConnection.CreateCommand();
 
                 command.CommandText =
-                    $"SELECT `Name`, `Cooldown`, `Cost`, `Money`, `VehicleId`, `Items` FROM `{TableName}`;";
+                    $"SELECT * FROM `{TableName}` ORDER BY `Id` ASC;";
 
                 await using var reader = await command.ExecuteReaderAsync();
 
@@ -155,18 +164,18 @@ namespace Kits.Databases
                     {
                         Array.Clear(ConvertorExtension.s_Buffer, 0, ConvertorExtension.s_Buffer.Length);
 
-                        if (!reader.IsDBNull(5))
+                        if (!reader.IsDBNull(6))
                         {
-                            reader.GetBytes(5, 0, ConvertorExtension.s_Buffer, 0, ushort.MaxValue);
+                            reader.GetBytes(6, 0, ConvertorExtension.s_Buffer, 0, ushort.MaxValue);
                         }
 
                         result.Add(new Kit()
                         {
-                            Name = reader.IsDBNull(0) ? null : reader.GetString(0),
-                            Cooldown = reader.IsDBNull(1) ? null : reader.GetFloat(1),
-                            Cost = reader.IsDBNull(2) ? null : reader.GetDecimal(2),
-                            Money = reader.IsDBNull(3) ? null : reader.GetDecimal(3),
-                            VehicleId = reader.IsDBNull(4) ? null : reader.GetString(4),
+                            Name = reader.IsDBNull(1) ? null : reader.GetString(1),
+                            Cooldown = reader.IsDBNull(2) ? null : reader.GetFloat(2),
+                            Cost = reader.IsDBNull(3) ? null : reader.GetDecimal(3),
+                            Money = reader.IsDBNull(4) ? null : reader.GetDecimal(4),
+                            VehicleId = reader.IsDBNull(5) ? null : reader.GetString(5),
                             Items = ConvertorExtension.ConvertToKitItems(ConvertorExtension.s_Buffer, m_Logger)
                         });
                     }
