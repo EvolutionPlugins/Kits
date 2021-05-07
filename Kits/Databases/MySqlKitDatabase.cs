@@ -27,8 +27,20 @@ namespace Kits.Databases
             {
                 await m_MySqlConnection.OpenAsync();
                 await using var command = m_MySqlConnection.CreateCommand();
+                
+                command.CommandText = $"SHOW TABLES LIKE '{TableName}';";
+                if (await command.ExecuteScalarAsync() != null)
+                {
+                    command.CommandText = $@"ALTER TABLE `{TableName}`
+	                    ADD COLUMN IF NOT EXISTS `Id` INT(11) NOT NULL AUTO_INCREMENT FIRST,
+	                    DROP PRIMARY KEY,
+	                    ADD PRIMARY KEY (`Id`);";
 
-                command.CommandText = $@"CREATE TABLE `kits` (
+                    await command.ExecuteNonQueryAsync();
+                    return;
+                }
+
+                command.CommandText = $@"CREATE TABLE IF NOT EXISTS `{TableName}` (
 	                `Id` INT(11) NOT NULL AUTO_INCREMENT,
 	                `Name` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_unicode_ci',
 	                `Cooldown` FLOAT(12,0) NULL DEFAULT NULL,
@@ -36,18 +48,9 @@ namespace Kits.Databases
 	                `Money` DECIMAL(10,0) NULL DEFAULT NULL,
 	                `VehicleId` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
 	                `Items` BLOB NULL DEFAULT NULL,
-	                PRIMARY KEY (`Id`) USING BTREE);";
+	                PRIMARY KEY (`Id`));";
 
-                var i = await command.ExecuteNonQueryAsync();
-                Console.WriteLine(i);
-
-                await using var command1 = m_MySqlConnection.CreateCommand();
-
-                command1.CommandText = $@"ALTER TABLE `{TableName}`
-	                ADD COLUMN `Id` INT(11) NOT NULL AUTO_INCREMENT FIRST,
-	                ADD PRIMARY KEY (`Id`);";
-
-                await command1.ExecuteNonQueryAsync();
+                await command.ExecuteNonQueryAsync();
             }
             finally
             {
