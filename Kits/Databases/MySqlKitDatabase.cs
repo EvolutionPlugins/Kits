@@ -31,12 +31,22 @@ namespace Kits.Databases
                 command.CommandText = $"SHOW TABLES LIKE '{TableName}';";
                 if (await command.ExecuteScalarAsync() != null)
                 {
+                    // FIXME: :|
+                    command.CommandText = $"SELECT * FROM `{TableName}` LIMIT 0;";
+                    var reader = await command.ExecuteReaderAsync();
+                    var schema = await reader.GetColumnSchemaAsync();
+                    if (schema[0].ColumnName.Equals("id", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return;
+                    }
+                    
                     command.CommandText = $@"ALTER TABLE `{TableName}`
-	                    ADD COLUMN IF NOT EXISTS `Id` INT(11) NOT NULL AUTO_INCREMENT FIRST,
+	                    ADD COLUMN `Id` INT(11) NOT NULL AUTO_INCREMENT FIRST,
 	                    DROP PRIMARY KEY,
 	                    ADD PRIMARY KEY (`Id`);";
 
                     await command.ExecuteNonQueryAsync();
+
                     return;
                 }
 
