@@ -23,17 +23,18 @@ namespace Kits.Providers
         private readonly Kits m_Plugin;
         private readonly IPermissionRegistry m_PermissionRegistry;
         private readonly ILogger<KitStore> m_Logger;
+        private readonly IServiceProvider m_Provider;
         private readonly IDisposable? m_ConfigurationChangedWatcher;
 
         private IKitDatabase m_Database = null!;
 
         public KitStore(Kits plugin, IPermissionRegistry permissionRegistry, ILogger<KitStore> logger,
-            IEventBus eventBus)
+            IEventBus eventBus, IServiceProvider provider)
         {
             m_Plugin = plugin;
             m_PermissionRegistry = permissionRegistry;
             m_Logger = logger;
-
+            m_Provider = provider;
             AsyncHelper.RunSync(ParseLoadDatabase);
 
             m_ConfigurationChangedWatcher =
@@ -51,7 +52,7 @@ namespace Kits.Providers
             var type = m_Plugin.Configuration["database:connectionType"];
             m_Database = (type.ToLower() switch
             {
-                "mysql" => new MySqlKitDatabase(m_Plugin),
+                "mysql" => new MySqlKitDatabase(m_Provider),
                 "datastore" => new DataStoreKitDatabase(m_Plugin),
                 _ => null!
             })!;
@@ -87,7 +88,7 @@ namespace Kits.Providers
 
         public async Task<Kit?> GetKit(string kitName)
         {
-            var kit = await m_Database.GetKitAsync(kitName);
+            var kit = await m_Database.FindKitByName(kitName);
             if (kit?.Name is not null)
             {
                 RegisterPermission(kit.Name);
@@ -101,7 +102,7 @@ namespace Kits.Providers
             return m_Database.RemoveKitAsync(kitName);
         }
 
-        private async Task RegisterPermissionsAsync()
+        protected virtual async Task RegisterPermissionsAsync()
         {
             foreach (var kit in await m_Database.GetKitsAsync())
             {
@@ -112,7 +113,7 @@ namespace Kits.Providers
             }
         }
 
-        private void RegisterPermission(string kitName)
+        protected virtual void RegisterPermission(string kitName)
         {
             m_PermissionRegistry.RegisterPermission(m_Plugin, "kits." + kitName.ToLower());
         }

@@ -49,7 +49,7 @@ namespace Kits.Providers
             }
 
             var kitCooldown = kitCooldowns!.Find(x =>
-                x.KitName is not null && x.KitName.Equals(kitName, StringComparison.CurrentCultureIgnoreCase));
+                x.KitName?.Equals(kitName, StringComparison.CurrentCultureIgnoreCase) == true);
             return kitCooldown == null ? null : DateTime.Now - kitCooldown.KitCooldown;
         }
 

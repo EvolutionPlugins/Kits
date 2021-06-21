@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Kits.Providers;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenMod.API.Plugins;
 using OpenMod.Core.Plugins;
@@ -14,10 +16,12 @@ namespace Kits
     public class Kits : OpenModUniversalPlugin
     {
         private readonly ILogger<Kits> m_Logger;
+        private readonly IServiceProvider m_ServiceProvider;
 
-        public Kits(ILogger<Kits> logger, IServiceProvider serviceProvider) : base(serviceProvider)
+        public Kits(ILogger<Kits> logger, IServiceProvider serviceProvider, KitStore kitStore /* just to trigger database loading */) : base(serviceProvider)
         {
             m_Logger = logger;
+            m_ServiceProvider = serviceProvider;
         }
 
         protected override Task OnLoadAsync()

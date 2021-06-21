@@ -71,14 +71,14 @@ namespace Kits.Commands
             var kit = new Kit
             {
                 Cooldown = (float)cooldown.TotalSeconds,
-                Items = items.Select(x => x.ConvertIItemToKitItem()).ToList(),
+                Items = items.ConvertAll(x => x.ConvertIItemToKitItem()),
                 Name = name,
                 Cost = cost,
                 Money = money,
                 VehicleId = vehicleId
             };
 
-            UnturnedExtension.AddClothes(playerUser, kit.Items);
+            // UnturnedExtension.AddClothes(playerUser, kit.Items);
 
             await m_KitStore.AddKit(kit);
             await PrintAsync(m_StringLocalizer["commands:kit:create:success", new { Kit = kit }]);

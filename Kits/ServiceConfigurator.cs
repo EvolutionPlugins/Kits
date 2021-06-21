@@ -1,10 +1,7 @@
 ﻿extern alias JetBrainsAnnotations;
-using System;
 using EvolutionPlugins.Economy.Stub;
 using JetBrainsAnnotations::JetBrains.Annotations;
-using Kits.Logging;
 using Microsoft.Extensions.DependencyInjection;
-using MySqlConnector.Logging;
 using OpenMod.API.Ioc;
 using OpenMod.API.Prioritization;
 
@@ -18,15 +15,6 @@ namespace Kits
             IServiceCollection serviceCollection)
         {
             serviceCollection.AddEconomyStub();
-
-            try
-            {
-                MySqlConnectorLogManager.Provider = new SerilogLoggerProviderEx();
-            }
-            catch (InvalidOperationException)
-            {
-                // already set up
-            }
         }
     }
 }

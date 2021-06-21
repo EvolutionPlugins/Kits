@@ -1,6 +1,4 @@
 ﻿extern alias JetBrainsAnnotations;
-using System;
-using System.Threading.Tasks;
 using JetBrainsAnnotations::JetBrains.Annotations;
 using Kits.Databases;
 using Kits.Models;
@@ -8,6 +6,8 @@ using OpenMod.API.Commands;
 using OpenMod.API.Persistence;
 using OpenMod.Core.Commands;
 using OpenMod.Core.Console;
+using System;
+using System.Threading.Tasks;
 
 namespace Kits.Commands
 {
@@ -17,11 +17,13 @@ namespace Kits.Commands
     [UsedImplicitly]
     public class CommandKitMigrate : Command
     {
+        private readonly IServiceProvider m_ServiceProvider;
         private readonly IDataStore m_DataStore;
         private readonly Kits m_Plugin;
 
         public CommandKitMigrate(IServiceProvider serviceProvider, IDataStore dataStore, Kits plugin) : base(serviceProvider)
         {
+            m_ServiceProvider = serviceProvider;
             m_DataStore = dataStore;
             m_Plugin = plugin;
         }
@@ -39,9 +41,9 @@ namespace Kits.Commands
                 throw new UserFriendlyException("Unable to load 'kits.data.yaml'");
             }
 
-            var mysql = new MySqlKitDatabase(m_Plugin);
+            var mysql = new MySqlKitDatabase(m_ServiceProvider);
             await mysql.LoadDatabaseAsync();
-            
+
             foreach (var kit in kits.Kits)
             {
                 await mysql.AddKitAsync(kit);
