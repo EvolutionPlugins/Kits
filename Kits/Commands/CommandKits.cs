@@ -61,7 +61,7 @@ namespace Kits.Commands
                 m_Logger.LogWarning(e, "Failed to get currency symbol and currency name");
             }
 
-            var kits = await m_KitManager.GetAvailablePlayerKits(showKitsUser);
+            var kits = await m_KitManager.GetAvailableKitsForPlayerAysnc(showKitsUser);
             kits = kits.Count > 0 ? kits : null;
 
             await PrintAsync(m_StringLocalizer["commands:kits", new

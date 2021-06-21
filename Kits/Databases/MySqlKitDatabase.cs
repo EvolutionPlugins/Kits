@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Kits.Databases
 {
-    public sealed class MySqlKitDatabase : KitDatabaseCore, IKitDatabase, IAsyncDisposable
+    public sealed class MySqlKitDatabase : KitDatabaseCore, IKitDatabase
     {
         private readonly ILogger<MySqlKitDatabase> m_Logger;
         private readonly KitsDbContext m_Context;
@@ -46,7 +46,7 @@ namespace Kits.Databases
             return true;
         }
 
-        public async Task<Kit?> FindKitByName(string name)
+        public async Task<Kit?> FindKitByNameAsync(string name)
         {
             if (string.IsNullOrEmpty(name))
             {
@@ -82,12 +82,9 @@ namespace Kits.Databases
                 throw new ArgumentNullException(nameof(kit));
             }
 
-            return false;
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-
+            m_Context.Kits.Update(kit);
+            await m_Context.SaveChangesAsync();
+            return true;
         }
     }
 }

@@ -38,7 +38,7 @@ namespace Kits.Databases
             return true;
         }
 
-        public Task<Kit?> FindKitByName(string name)
+        public Task<Kit?> FindKitByNameAsync(string name)
         {
             return Task.FromResult(m_Data.Kits?.Find(x => x.Name?.Equals(name) ?? false));
         }

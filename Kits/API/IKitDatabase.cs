@@ -9,7 +9,7 @@ namespace Kits.API
 
         Task<IReadOnlyCollection<Kit>> GetKitsAsync();
 
-        Task<Kit?> FindKitByName(string name);
+        Task<Kit?> FindKitByNameAsync(string name);
 
         Task<bool> AddKitAsync(Kit kit);
 

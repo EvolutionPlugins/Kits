@@ -56,7 +56,7 @@ namespace Kits.Commands
 
             var shouldForceCreate = cost != 0 || money != 0 || !string.IsNullOrEmpty(vehicleId);
 
-            var kits = await m_KitStore.GetKits();
+            var kits = await m_KitStore.GetKitsAsync();
             if (kits.Any(x => x.Name?.Equals(name, StringComparison.OrdinalIgnoreCase) ?? false))
             {
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:exist", new { Name = name }]);
@@ -80,7 +80,7 @@ namespace Kits.Commands
 
             // UnturnedExtension.AddClothes(playerUser, kit.Items);
 
-            await m_KitStore.AddKit(kit);
+            await m_KitStore.AddKitAsyc(kit);
             await PrintAsync(m_StringLocalizer["commands:kit:create:success", new { Kit = kit }]);
         }
     }

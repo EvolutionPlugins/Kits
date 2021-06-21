@@ -39,7 +39,7 @@ namespace Kits.Providers
             AsyncHelper.RunSync(LoadData);
         }
 
-        public async Task<TimeSpan?> GetLastCooldown(IPlayerUser player, string kitName)
+        public async Task<TimeSpan?> GetLastCooldownAsync(IPlayerUser player, string kitName)
         {
             if (await m_PermissionChecker.CheckPermissionAsync(player, c_NoCooldownPermission) ==
                 PermissionGrantResult.Grant
@@ -53,7 +53,7 @@ namespace Kits.Providers
             return kitCooldown == null ? null : DateTime.Now - kitCooldown.KitCooldown;
         }
 
-        public async Task RegisterCooldown(IPlayerUser player, string kitName, DateTime time)
+        public async Task RegisterCooldownAsync(IPlayerUser player, string kitName, DateTime time)
         {
             if (await m_PermissionChecker.CheckPermissionAsync(player, c_NoCooldownPermission) ==
                 PermissionGrantResult.Grant)

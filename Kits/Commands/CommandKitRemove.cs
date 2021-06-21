@@ -33,7 +33,7 @@ namespace Kits.Commands
             }
 
             var kitName = Context.Parameters[0];
-            await m_KitStore.RemoveKit(kitName);
+            await m_KitStore.RemoveKitAsync(kitName);
             await PrintAsync(m_StringLocalizer["commands:kit:remove:success", new { Name = kitName }]);
         }
     }

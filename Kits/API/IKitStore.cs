@@ -7,12 +7,12 @@ namespace Kits.API
     [Service]
     public interface IKitStore
     {
-        Task<IReadOnlyCollection<Kit>> GetKits();
+        Task<IReadOnlyCollection<Kit>> GetKitsAsync();
 
-        Task<Kit?> GetKit(string kitName);
+        Task<Kit?> FindKitAsync(string kitName);
 
-        Task AddKit(Kit kit);
+        Task AddKitAsyc(Kit kit);
 
-        Task RemoveKit(string kitName);
+        Task RemoveKitAsync(string kitName);
     }
 }

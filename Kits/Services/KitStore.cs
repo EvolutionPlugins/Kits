@@ -73,12 +73,12 @@ namespace Kits.Providers
             await RegisterPermissionsAsync();
         }
 
-        public Task<IReadOnlyCollection<Kit>> GetKits()
+        public Task<IReadOnlyCollection<Kit>> GetKitsAsync()
         {
             return m_Database.GetKitsAsync();
         }
 
-        public async Task AddKit(Kit kit)
+        public async Task AddKitAsyc(Kit kit)
         {
             if (!string.IsNullOrEmpty(kit.Name) && await m_Database.AddKitAsync(kit))
             {
@@ -86,9 +86,9 @@ namespace Kits.Providers
             }
         }
 
-        public async Task<Kit?> GetKit(string kitName)
+        public async Task<Kit?> FindKitAsync(string kitName)
         {
-            var kit = await m_Database.FindKitByName(kitName);
+            var kit = await m_Database.FindKitByNameAsync(kitName);
             if (kit?.Name is not null)
             {
                 RegisterPermission(kit.Name);
@@ -97,7 +97,7 @@ namespace Kits.Providers
             return kit;
         }
 
-        public Task RemoveKit(string kitName)
+        public Task RemoveKitAsync(string kitName)
         {
             return m_Database.RemoveKitAsync(kitName);
         }

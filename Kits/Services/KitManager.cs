@@ -58,7 +58,7 @@ namespace Kits.Providers
 
             //var kits = await m_KitStore.GetKits();
 
-            var kit = await m_KitStore.GetKit(name);
+            var kit = await m_KitStore.FindKitAsync(name);
             if (kit == null)
             {
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:notFound", new { Name = name }]);
@@ -70,7 +70,7 @@ namespace Kits.Providers
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:noPermission", new { Kit = kit }]);
             }
 
-            var cooldown = await m_KitCooldownStore.GetLastCooldown(user, name);
+            var cooldown = await m_KitCooldownStore.GetLastCooldownAsync(user, name);
             if (!forceGiveKit && cooldown != null)
             {
                 if (cooldown.Value.TotalSeconds < kit.Cooldown)
@@ -80,7 +80,7 @@ namespace Kits.Providers
                 }
             }
 
-            await m_KitCooldownStore.RegisterCooldown(user, name, DateTime.Now);
+            await m_KitCooldownStore.RegisterCooldownAsync(user, name, DateTime.Now);
 
             if (!forceGiveKit && kit.Cost != 0)
             {
@@ -140,10 +140,10 @@ namespace Kits.Providers
             }
         }
 
-        public async Task<IReadOnlyCollection<Kit>> GetAvailablePlayerKits(IPlayerUser player)
+        public async Task<IReadOnlyCollection<Kit>> GetAvailableKitsForPlayerAysnc(IPlayerUser player)
         {
             var list = new List<Kit>();
-            foreach (var kit in await m_KitStore.GetKits())
+            foreach (var kit in await m_KitStore.GetKitsAsync())
             {
                 if (await m_PermissionChecker.CheckPermissionAsync(player,
                     $"{m_Plugin.OpenModComponentId}:{KitStore.c_KitsKey}.{kit.Name}") == PermissionGrantResult.Grant)

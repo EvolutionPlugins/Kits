@@ -8,8 +8,8 @@ namespace Kits.API
     [Service]
     public interface IKitCooldownStore
     {
-        Task<TimeSpan?> GetLastCooldown(IPlayerUser player, string kitName);
+        Task<TimeSpan?> GetLastCooldownAsync(IPlayerUser player, string kitName);
 
-        Task RegisterCooldown(IPlayerUser player, string kitName, DateTime time);
+        Task RegisterCooldownAsync(IPlayerUser player, string kitName, DateTime time);
     }
 }
