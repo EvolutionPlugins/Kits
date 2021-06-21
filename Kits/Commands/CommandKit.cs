@@ -37,13 +37,13 @@ namespace Kits.Commands
                 {
                     forceGiveKit = true;
                 }
-                else if (await CheckPermissionAsync("give.other") != PermissionGrantResult.Grant)
+                else if (await CheckPermissionAsync("give.other") == PermissionGrantResult.Grant)
                 {
-                    throw new NotEnoughPermissionException(Context, "give.other");
+                    forceGiveKit = false;
                 }
                 else
                 {
-                    throw new NotEnoughPermissionException(Context, "give.other.force");
+                    throw new NotEnoughPermissionException(Context, "give.other");
                 }
             }
 

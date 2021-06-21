@@ -3,88 +3,83 @@ using Kits.API;
 using Kits.Databases.Mysql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using OpenMod.API.Commands;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace Kits.Databases
 {
-    public sealed class MySqlKitDatabase : KitDatabaseCore, IKitDatabase
+    public class MySqlKitDatabase : KitDatabaseCore, IKitDatabase
     {
-        private readonly ILogger<MySqlKitDatabase> m_Logger;
-        private readonly KitsDbContext m_Context;
-
-        public MySqlKitDatabase(IServiceProvider provider) : base(provider.GetRequiredService<Kits>())
+        public MySqlKitDatabase(IServiceProvider provider) : this(provider.GetRequiredService<Kits>())
         {
-            m_Logger = provider.GetRequiredService<ILogger<MySqlKitDatabase>>();
-            m_Context = provider.GetRequiredService<KitsDbContext>();
         }
 
-        public MySqlKitDatabase(Kits plugin, KitsDbContext context) : base(plugin)
+        public MySqlKitDatabase(Kits plugin) : base(plugin)
         {
-            m_Logger = plugin.LifetimeScope.Resolve<ILogger<MySqlKitDatabase>>();
-            m_Context = context;
         }
 
-        public Task LoadDatabaseAsync()
+        protected virtual KitsDbContext GetDbContext() => Plugin.LifetimeScope.Resolve<KitsDbContext>();
+
+        public async Task LoadDatabaseAsync()
         {
-            return m_Context.Database.MigrateAsync();
+            await using var context = GetDbContext();
+            await context.Database.MigrateAsync();
         }
 
         public async Task<bool> AddKitAsync(Kit kit)
         {
-            if (kit is null)
+            await using var context = GetDbContext();
+
+            if (await context.Kits.Where(x => x.Name.Equals(kit.Name)).AnyAsync())
             {
-                throw new ArgumentNullException(nameof(kit));
+                throw new UserFriendlyException(StringLocalizer["commands:kit:exist"]);
             }
 
-            await m_Context.Kits.AddAsync(kit);
-            await m_Context.SaveChangesAsync();
-            return true;
+            await context.Kits.AddAsync(kit);
+            return await context.SaveChangesAsync() > 0;
         }
 
         public async Task<Kit?> FindKitByNameAsync(string name)
         {
-            if (string.IsNullOrEmpty(name))
-            {
-                throw new ArgumentException($"'{nameof(name)}' cannot be null or empty", nameof(name));
-            }
+            await using var context = GetDbContext();
 
-            return await m_Context.Kits.Where(x => x.Name == name).FirstOrDefaultAsync();
+            return await context.Kits
+                .Where(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+                .FirstOrDefaultAsync();
         }
 
         public async Task<IReadOnlyCollection<Kit>> GetKitsAsync()
         {
-            return await m_Context.Kits.ToListAsync();
+            await using var context = GetDbContext();
+            return await context.Kits.ToListAsync();
         }
 
         public async Task<bool> RemoveKitAsync(string name)
         {
-            if (string.IsNullOrEmpty(name))
+            await using var context = GetDbContext();
+
+            var kit = await context.Kits
+                .Where(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+                .FirstOrDefaultAsync();
+            if (kit == null)
             {
-                throw new ArgumentException($"'{nameof(name)}' cannot be null or empty.", nameof(name));
+                return false;
             }
 
-            var fakeKit = new Kit { Name = name };
-            m_Context.Kits.Attach(fakeKit);
-            m_Context.Kits.Remove(fakeKit);
-            await m_Context.SaveChangesAsync();
-            return true;
+            context.Kits.Remove(kit);
+
+            return await context.SaveChangesAsync() > 0;
         }
 
         public async Task<bool> UpdateKitAsync(Kit kit)
         {
-            if (kit is null)
-            {
-                throw new ArgumentNullException(nameof(kit));
-            }
+            await using var context = GetDbContext();
 
-            m_Context.Kits.Update(kit);
-            await m_Context.SaveChangesAsync();
-            return true;
+            context.Kits.Update(kit);
+            return await context.SaveChangesAsync() > 0;
         }
     }
 }

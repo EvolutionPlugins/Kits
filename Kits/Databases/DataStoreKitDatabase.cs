@@ -1,12 +1,12 @@
 ﻿extern alias JetBrainsAnnotations;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Kits.API;
 using Kits.Models;
 using OpenMod.API.Commands;
 using OpenMod.Core.Helpers;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Kits.Databases
 {
@@ -28,7 +28,7 @@ namespace Kits.Databases
                 throw new ArgumentNullException(nameof(kit));
             }
 
-            if (m_Data.Kits.Any(x => x.Name?.Equals(kit.Name, StringComparison.OrdinalIgnoreCase) ?? false))
+            if (m_Data.Kits.Any(x => x.Name.Equals(kit.Name, StringComparison.OrdinalIgnoreCase)))
             {
                 throw new UserFriendlyException(StringLocalizer["commands:kit:exist"]);
             }
@@ -40,7 +40,7 @@ namespace Kits.Databases
 
         public Task<Kit?> FindKitByNameAsync(string name)
         {
-            return Task.FromResult(m_Data.Kits?.Find(x => x.Name?.Equals(name) ?? false));
+            return Task.FromResult(m_Data.Kits?.Find(x => x.Name.Equals(name)));
         }
 
         public Task<IReadOnlyCollection<Kit>> GetKitsAsync()
@@ -72,7 +72,7 @@ namespace Kits.Databases
 
         public async Task<bool> RemoveKitAsync(string name)
         {
-            var index = m_Data.Kits?.FindIndex(x => x.Name?.Equals(name, StringComparison.OrdinalIgnoreCase) ?? false);
+            var index = m_Data.Kits?.FindIndex(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
             if (index < 0)
             {
                 throw new UserFriendlyException(StringLocalizer["commands:kit:remove:fail", new { Name = name }]);
@@ -91,7 +91,7 @@ namespace Kits.Databases
             }
 
             var index = m_Data.Kits?.FindIndex(
-                x => x.Name?.Equals(kit.Name, StringComparison.OrdinalIgnoreCase) ?? false);
+                x => x.Name.Equals(kit.Name, StringComparison.OrdinalIgnoreCase));
             if (index < 0)
             {
                 return false;

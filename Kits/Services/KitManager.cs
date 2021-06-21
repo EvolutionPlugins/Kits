@@ -1,71 +1,52 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
 using Kits.API;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
-using Microsoft.Extensions.Logging;
 using OpenMod.API.Commands;
 using OpenMod.API.Ioc;
 using OpenMod.API.Permissions;
 using OpenMod.API.Prioritization;
-using OpenMod.Core.Commands;
 using OpenMod.Extensions.Economy.Abstractions;
-using OpenMod.Extensions.Games.Abstractions.Items;
 using OpenMod.Extensions.Games.Abstractions.Players;
-using OpenMod.Extensions.Games.Abstractions.Vehicles;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Kits.Providers
 {
-    [PluginServiceImplementation(Lifetime = ServiceLifetime.Singleton, Priority = Priority.Lowest)]
+    [PluginServiceImplementation(Lifetime = ServiceLifetime.Transient, Priority = Priority.Lowest)]
     [UsedImplicitly]
     public class KitManager : IKitManager
     {
-        private readonly ILogger<KitManager> m_Logger;
         private readonly IEconomyProvider m_EconomyProvider;
         private readonly IKitCooldownStore m_KitCooldownStore;
         private readonly IKitStore m_KitStore;
         private readonly IStringLocalizer m_StringLocalizer;
         private readonly IPermissionChecker m_PermissionChecker;
-        private readonly Kits m_Plugin;
-        private readonly IItemSpawner m_ItemSpawner;
-        private readonly IVehicleSpawner m_VehicleSpawner;
+        private readonly IServiceProvider m_ServiceProvider;
 
-        public KitManager(ILogger<KitManager> logger, IEconomyProvider economyProvider,
-            IKitCooldownStore kitCooldownStore, IKitStore kitStore, IStringLocalizer stringLocalizer,
-            IPermissionChecker permissionChecker, Kits plugin, IItemSpawner itemSpawner, IVehicleSpawner vehicleSpawner)
+        public KitManager(IEconomyProvider economyProvider, IKitCooldownStore kitCooldownStore, IKitStore kitStore,
+            IStringLocalizer stringLocalizer, IPermissionChecker permissionChecker, IServiceProvider serviceProvider)
         {
-            m_Logger = logger;
             m_EconomyProvider = economyProvider;
             m_KitCooldownStore = kitCooldownStore;
             m_KitStore = kitStore;
             m_StringLocalizer = stringLocalizer;
             m_PermissionChecker = permissionChecker;
-            m_Plugin = plugin;
-            m_ItemSpawner = itemSpawner;
-            m_VehicleSpawner = vehicleSpawner;
+            m_ServiceProvider = serviceProvider;
         }
 
         public async Task GiveKitAsync(IPlayerUser user, string name, ICommandActor? instigator = null,
             bool forceGiveKit = false)
         {
-            // ReSharper disable once SuspiciousTypeConversion.Global
-            if (user.Player is not IHasInventory inventory)
-            {
-                throw new UserFriendlyException("IPlayer doesn't have compatibility IHasInventory");
-            }
-
-            //var kits = await m_KitStore.GetKits();
-
-            var kit = await m_KitStore.FindKitAsync(name);
+            var kit = await m_KitStore.FindKitByNameAsync(name);
             if (kit == null)
             {
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:notFound", new { Name = name }]);
             }
 
             if (!forceGiveKit && await m_PermissionChecker.CheckPermissionAsync(user,
-                $"{m_Plugin.OpenModComponentId}:{KitStore.c_KitsKey}.{kit.Name}") != PermissionGrantResult.Grant)
+                $"{KitStore.c_KitsKey}.{kit.Name}") != PermissionGrantResult.Grant)
             {
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:noPermission", new { Kit = kit }]);
             }
@@ -80,57 +61,15 @@ namespace Kits.Providers
                 }
             }
 
-            await m_KitCooldownStore.RegisterCooldownAsync(user, name, DateTime.Now);
-
             if (!forceGiveKit && kit.Cost != 0)
             {
-                var balance = await m_EconomyProvider.GetBalanceAsync(user.Id, user.Type);
-                if (kit.Cost > balance)
-                {
-                    var money = kit.Cost - balance;
-
-                    throw new NotEnoughBalanceException(m_StringLocalizer["commands:kit:noMoney",
-                        new
-                        {
-                            Kit = kit,
-                            Money = money,
-                            MoneyName = m_EconomyProvider.CurrencyName,
-                            MoneySymbol = m_EconomyProvider.CurrencySymbol
-                        }], balance);
-                }
-
                 await m_EconomyProvider.UpdateBalanceAsync(user.Id, user.Type, -kit.Cost,
                     m_StringLocalizer["commands:kit:balanceUpdateReason:buy", new { Kit = kit }]);
             }
 
-            if (kit.Money != 0)
-            {
-                await m_EconomyProvider.UpdateBalanceAsync(user.Id, user.Type, kit.Money,
-                    m_StringLocalizer["commands:kit:balanceUpdateReason:got", new { Kit = kit }]);
-            }
+            await m_KitCooldownStore.RegisterCooldownAsync(user, name, DateTime.Now);
 
-            foreach (var item in kit.Items!)
-            {
-                try
-                {
-                    var inventoryItem =
-                        await m_ItemSpawner.GiveItemAsync(inventory.Inventory!, item.ItemAssetId, item.State);
-                    if (inventoryItem == null)
-                    {
-                        m_Logger.LogError(
-                            $"Item {item.ItemAssetId} was unable to give to player {user.FullActorName})");
-                    }
-                }
-                catch (Exception e)
-                {
-                    m_Logger.LogError(e, $"Item {item.ItemAssetId} was unable to give to player {user.FullActorName})");
-                }
-            }
-
-            if (!string.IsNullOrEmpty(kit.VehicleId))
-            {
-                await m_VehicleSpawner.SpawnVehicleAsync(user.Player, kit.VehicleId!);
-            }
+            await kit.GiveKitToPlayer(user, m_ServiceProvider);
 
             await user.PrintMessageAsync(m_StringLocalizer["commands:kit:success", new { Kit = kit }]);
 
@@ -140,13 +79,13 @@ namespace Kits.Providers
             }
         }
 
-        public async Task<IReadOnlyCollection<Kit>> GetAvailableKitsForPlayerAysnc(IPlayerUser player)
+        public async Task<IReadOnlyCollection<Kit>> GetAvailableKitsForPlayerAsync(IPlayerUser player)
         {
             var list = new List<Kit>();
             foreach (var kit in await m_KitStore.GetKitsAsync())
             {
                 if (await m_PermissionChecker.CheckPermissionAsync(player,
-                    $"{m_Plugin.OpenModComponentId}:{KitStore.c_KitsKey}.{kit.Name}") == PermissionGrantResult.Grant)
+                    $"{KitStore.c_KitsKey}.{kit.Name}") == PermissionGrantResult.Grant)
                 {
                     list.Add(kit);
                 }

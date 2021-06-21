@@ -10,7 +10,13 @@ namespace Kits.Databases.Mysql
 {
     public class KitsDbContext : OpenModDbContext<KitsDbContext>
     {
-        public DbSet<Kit> Kits { get; set; } = null!;
+        public DbSet<Kit> Kits
+        {
+            get
+            {
+                return Set<Kit>();
+            }
+        }
 
         public KitsDbContext(IServiceProvider serviceProvider) : base(serviceProvider)
         {
@@ -26,6 +32,7 @@ namespace Kits.Databases.Mysql
             modelBuilder.ApplyConfiguration(new KitConfiguration());
         }
 
+        // https://stackoverflow.com/questions/44829824/how-to-store-json-in-an-entity-field-with-ef-core
         public class KitConfiguration : IEntityTypeConfiguration<Kit>
         {
             public virtual void Configure(EntityTypeBuilder<Kit> builder)

@@ -11,6 +11,6 @@ namespace Kits.API
     {
         Task GiveKitAsync(IPlayerUser user, string name, ICommandActor? instigator = null, bool forceGiveKit = false);
 
-        Task<IReadOnlyCollection<Kit>> GetAvailableKitsForPlayerAysnc(IPlayerUser player);
+        Task<IReadOnlyCollection<Kit>> GetAvailableKitsForPlayerAsync(IPlayerUser player);
     }
 }

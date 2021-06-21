@@ -1,8 +1,4 @@
-﻿using OpenMod.EntityFrameworkCore;
-using OpenMod.EntityFrameworkCore.MySql;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using OpenMod.EntityFrameworkCore.MySql;
 
 namespace Kits.Databases.Mysql
 {

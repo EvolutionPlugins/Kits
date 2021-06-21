@@ -1,6 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
 using Kits.API;
 using Kits.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,6 +8,8 @@ using OpenMod.API.Persistence;
 using OpenMod.Core.Helpers;
 using OpenMod.Core.Permissions;
 using OpenMod.Extensions.Games.Abstractions.Players;
+using System;
+using System.Threading.Tasks;
 
 [assembly: RegisterPermission("nocooldown", Description = "Allows use kit without waiting for cooldown")]
 
@@ -29,8 +29,7 @@ namespace Kits.Providers
         private KitsCooldownData m_KitsCooldownData = null!;
         private IDisposable? m_FileWatcher = null!;
 
-        public KitCooldownStore(Kits plugin, IPermissionRegistry permissionRegistry,
-            IPermissionChecker permissionChecker)
+        public KitCooldownStore(Kits plugin, IPermissionChecker permissionChecker)
         {
             m_DataStore = plugin.DataStore;
             m_Plugin = plugin;
