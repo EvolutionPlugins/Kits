@@ -23,7 +23,7 @@ namespace Kits.Commands
         private readonly IServiceProvider m_ServiceProvider;
         private readonly IConfiguration m_Configuration;
 
-        public CommandKitMigrate(IServiceProvider serviceProvider, KitsDbContext dbContext, IConfiguration configuration) : base(serviceProvider)
+        public CommandKitMigrate(IServiceProvider serviceProvider, IConfiguration configuration) : base(serviceProvider)
         {
             m_ServiceProvider = serviceProvider;
             m_Configuration = configuration;
@@ -36,7 +36,7 @@ namespace Kits.Commands
 
             await using var dbContext = mysql.GetDbContext();
 
-            var oldTableName = m_Configuration["database:connectionTableName"];
+            var oldTableName = m_Configuration["database:connectionTableName"] ?? "kits";
             var newTableName = dbContext.Model.FindEntityType(typeof(Kit)).GetTableName();
 
             // maybe has other option to migrate data to other table
