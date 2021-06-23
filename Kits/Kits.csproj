@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net461</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <PackageLicenseExpression>EUPL-1.2</PackageLicenseExpression>
     <PackageTags>openmod openmod-plugin universal</PackageTags>
 	  <RootNamespace>Kits</RootNamespace>
