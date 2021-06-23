@@ -1,89 +1,92 @@
-﻿using System;
+﻿using Kits.API;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using OpenMod.Extensions.Games.Abstractions.Items;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using Kits.API;
-using Microsoft.Extensions.Logging;
-using OpenMod.Extensions.Games.Abstractions.Items;
 
 namespace Kits.Extensions
 {
-    internal static class ConvertorExtension
+    public static class ConvertorExtension
     {
-        internal static readonly byte[] s_Buffer = new byte[ushort.MaxValue];
-        internal static readonly object s_Lock = new object();
+        public static readonly byte s_SaveVersion = 1;
 
         public static KitItem ConvertIItemToKitItem(this IItem item)
         {
             return new(item.Asset.ItemAssetId, item.State);
         }
 
-        public static byte[] ConvertToByteArray(this IReadOnlyList<KitItem> items, ILogger? logger = null)
+        public static byte[] ConvertToByteArray(this IList<KitItem>? items)
         {
-            lock (s_Lock)
+            if (items == null)
             {
-                try
-                {
-                    Array.Clear(s_Buffer, 0, s_Buffer.Length);
-                    using var stream = new MemoryStream(s_Buffer, 0, s_Buffer.Length, true);
-                    using var writer = new BinaryWriter(stream);
-
-                    writer.Write(items.Count);
-                    foreach (var item in items)
-                    {
-                        writer.Write(item.ItemAssetId);
-                        writer.Write(item.State.ItemAmount);
-                        writer.Write(item.State.ItemDurability);
-                        writer.Write(item.State.ItemQuality);
-                        writer.Write(item.State.StateData.Length);
-                        writer.Write(item.State.StateData);
-                    }
-
-                    writer.Flush();
-
-                    return stream.ToArray();
-                }
-                catch (Exception e)
-                {
-                    logger?.LogError(e, "Failed to convert items to data byte array");
-                }
+                return Array.Empty<byte>();
             }
 
-            return Array.Empty<byte>();
+            using var ms = new MemoryStream();
+            using var bw = new BinaryWriter(ms);
+
+            bw.Write(s_SaveVersion);
+            bw.Write(items.Count);
+
+            foreach (var item in items)
+            {
+                item.Serialize(bw);
+            }
+
+            return ms.ToArray();
         }
 
-        public static List<KitItem> ConvertToKitItems(byte[] block, ILogger? logger = null)
+        public static List<KitItem> ConvertToKitItems(this byte[]? block)
         {
-            var list = new List<KitItem>();
+            var output = new List<KitItem>();
 
-            try
+            if (block == null)
             {
-                using var stream = new MemoryStream(block, false);
-                using var reader = new BinaryReader(stream);
-
-                var count = reader.ReadInt32();
-
-                for (var i = 0; i < count; i++)
-                {
-                    list.Add(new()
-                    {
-                        ItemAssetId = reader.ReadString(),
-                        State = new()
-                        {
-                            ItemAmount = reader.ReadDouble(),
-                            ItemDurability = reader.ReadDouble(),
-                            ItemQuality = reader.ReadDouble(),
-                            StateData = reader.ReadBytes(reader.ReadInt32())
-                        }
-                    });
-                }
-            }
-            catch (Exception e)
-            {
-                logger?.LogError(e, "Error occur on deserializing the data");
-                logger?.LogDebug("Hash data: {Data}", Convert.ToBase64String(block));
+                return output;
             }
 
-            return list;
+            using var ms = new MemoryStream();
+            using var br = new BinaryReader(ms);
+
+            br.ReadByte(); // save version, for now ignored
+
+            for (var i = 0; i < br.ReadInt32(); i++)
+            {
+                var kitItem = new KitItem();
+                kitItem.Deserialize(br);
+
+                output.Add(kitItem);
+            }
+
+            return output;
+        }
+
+        // https://stackoverflow.com/questions/44829824/how-to-store-json-in-an-entity-field-with-ef-core
+        public static PropertyBuilder<IList<KitItem>?> HasByteArrayConversion(this PropertyBuilder<IList<KitItem>?> propertyBuilder)
+        {
+            var converter = new ValueConverter<IList<KitItem>?, byte[]>
+            (
+            v => v.ConvertToByteArray(),
+            v => v.ConvertToKitItems()
+            );
+
+            var comparer = new ValueComparer<IList<KitItem>?>
+            (
+                (l, r) => l == r,
+                v => v == null ? 0 : v.GetHashCode(),
+                v => v.ConvertToByteArray().ConvertToKitItems()
+            );
+
+            propertyBuilder.HasConversion(converter);
+            propertyBuilder.Metadata.SetValueConverter(converter);
+            propertyBuilder.Metadata.SetValueComparer(comparer);
+            //propertyBuilder.HasColumnType("longblob");
+
+            return propertyBuilder;
         }
     }
 }

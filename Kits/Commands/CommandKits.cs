@@ -22,15 +22,13 @@ namespace Kits.Commands
         private readonly IKitManager m_KitManager;
         private readonly IStringLocalizer m_StringLocalizer;
         private readonly IEconomyProvider m_EconomyProvider;
-        private readonly ILogger<CommandKits> m_Logger;
 
         public CommandKits(IServiceProvider serviceProvider, IKitManager kitManager, IStringLocalizer stringLocalizer,
-            IEconomyProvider economyProvider, ILogger<CommandKits> logger) : base(serviceProvider)
+            IEconomyProvider economyProvider) : base(serviceProvider)
         {
             m_KitManager = kitManager;
             m_StringLocalizer = stringLocalizer;
             m_EconomyProvider = economyProvider;
-            m_Logger = logger;
         }
 
         protected override async Task OnExecuteAsync()
@@ -47,21 +45,14 @@ namespace Kits.Commands
             var moneySymbol = "$";
             var moneyName = string.Empty;
 
-            try
+            // prevent some exceptions
+            if (m_EconomyProvider is not EconomyProviderStub)
             {
-                // prevent some exceptions
-                if (m_EconomyProvider is not EconomyProviderStub)
-                {
-                    moneySymbol = m_EconomyProvider.CurrencySymbol;
-                    moneyName = m_EconomyProvider.CurrencyName;
-                }
-            }
-            catch (Exception e)
-            {
-                m_Logger.LogWarning(e, "Failed to get currency symbol and currency name");
+                moneySymbol = m_EconomyProvider.CurrencySymbol;
+                moneyName = m_EconomyProvider.CurrencyName;
             }
 
-            var kits = await m_KitManager.GetAvailablePlayerKits(showKitsUser);
+            var kits = await m_KitManager.GetAvailableKitsForPlayerAsync(showKitsUser);
             kits = kits.Count > 0 ? kits : null;
 
             await PrintAsync(m_StringLocalizer["commands:kits", new

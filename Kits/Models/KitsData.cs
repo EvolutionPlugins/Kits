@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using Kits.API;
+﻿using Kits.API;
+using System.Collections.Generic;
 
 namespace Kits.Models
 {

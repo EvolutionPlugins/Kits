@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <PackageLicenseExpression>EUPL-1.2</PackageLicenseExpression>
     <PackageTags>openmod openmod-plugin universal</PackageTags>
 	  <RootNamespace>Kits</RootNamespace>
@@ -27,19 +27,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="config.yaml" />
-    <None Remove="packages.yaml" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="EvolutionPlugins.Economy.Stub" Version="1.0.1" />
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="1.1.1" />
-    <PackageReference Include="MySqlConnector" Version="1.3.3" />
-    <PackageReference Include="OpenMod.Core" Version="3.0.24" />
-    <PackageReference Include="OpenMod.Extensions.Economy.Abstractions" Version="3.0.24" />
-    <PackageReference Include="OpenMod.Extensions.Games.Abstractions" Version="3.0.24" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="3.1.16">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.1.16">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="OpenMod.Core" Version="3.1.2" />
+    <PackageReference Include="OpenMod.EntityFrameworkCore.MySql" Version="3.1.2" />
+    <PackageReference Include="OpenMod.Extensions.Economy.Abstractions" Version="3.1.2" />
+    <PackageReference Include="OpenMod.Extensions.Games.Abstractions" Version="3.1.2" />
     <PackageReference Include="OpenMod.UnityEngine.Redist" Version="2019.4.10" />
-    <PackageReference Include="OpenMod.Unturned.Redist" Version="3.21.13" />
+    <PackageReference Include="OpenMod.Unturned.Redist" Version="3.21.21" />
   </ItemGroup>
 
   <ItemGroup>

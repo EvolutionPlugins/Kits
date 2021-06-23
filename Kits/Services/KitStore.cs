@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
 using Kits.API;
 using Kits.Databases;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,6 +8,9 @@ using OpenMod.API.Ioc;
 using OpenMod.API.Permissions;
 using OpenMod.Core.Helpers;
 using OpenMod.Core.Plugins.Events;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Kits.Providers
 {
@@ -23,17 +23,20 @@ namespace Kits.Providers
         private readonly Kits m_Plugin;
         private readonly IPermissionRegistry m_PermissionRegistry;
         private readonly ILogger<KitStore> m_Logger;
+        private readonly IServiceProvider m_Provider;
         private readonly IDisposable? m_ConfigurationChangedWatcher;
 
         private IKitDatabase m_Database = null!;
 
+        public IKitDatabase Database => m_Database;
+
         public KitStore(Kits plugin, IPermissionRegistry permissionRegistry, ILogger<KitStore> logger,
-            IEventBus eventBus)
+            IEventBus eventBus, IServiceProvider provider)
         {
             m_Plugin = plugin;
             m_PermissionRegistry = permissionRegistry;
             m_Logger = logger;
-
+            m_Provider = provider;
             AsyncHelper.RunSync(ParseLoadDatabase);
 
             m_ConfigurationChangedWatcher =
@@ -49,12 +52,12 @@ namespace Kits.Providers
         private async Task ParseLoadDatabase()
         {
             var type = m_Plugin.Configuration["database:connectionType"];
-            m_Database = (type.ToLower() switch
+            m_Database = type.ToLower() switch
             {
-                "mysql" => new MySqlKitDatabase(m_Plugin),
+                "mysql" => new MySqlKitDatabase(m_Provider),
                 "datastore" => new DataStoreKitDatabase(m_Plugin),
                 _ => null!
-            })!;
+            };
 
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
             if (m_Database == null)
@@ -72,22 +75,32 @@ namespace Kits.Providers
             await RegisterPermissionsAsync();
         }
 
-        public Task<IReadOnlyCollection<Kit>> GetKits()
+        public Task<IReadOnlyCollection<Kit>> GetKitsAsync()
         {
             return m_Database.GetKitsAsync();
         }
 
-        public async Task AddKit(Kit kit)
+        public async Task AddKitAsync(Kit kit)
         {
-            if (!string.IsNullOrEmpty(kit.Name) && await m_Database.AddKitAsync(kit))
+            if (kit?.Name == null || kit?.Items == null)
             {
-                RegisterPermission(kit.Name!);
+                throw new ArgumentNullException(nameof(kit));
+            }
+
+            if (await m_Database.AddKitAsync(kit))
+            {
+                RegisterPermission(kit.Name);
             }
         }
 
-        public async Task<Kit?> GetKit(string kitName)
+        public async Task<Kit?> FindKitByNameAsync(string kitName)
         {
-            var kit = await m_Database.GetKitAsync(kitName);
+            if (string.IsNullOrEmpty(kitName))
+            {
+                throw new ArgumentException($"'{nameof(kitName)}' cannot be null or empty.", nameof(kitName));
+            }
+
+            var kit = await m_Database.FindKitByNameAsync(kitName);
             if (kit?.Name is not null)
             {
                 RegisterPermission(kit.Name);
@@ -96,12 +109,18 @@ namespace Kits.Providers
             return kit;
         }
 
-        public Task RemoveKit(string kitName)
+        public Task RemoveKitAsync(string kitName)
         {
+            if (string.IsNullOrEmpty(kitName))
+            {
+                return Task.FromException(new ArgumentException(
+                    $"'{nameof(kitName)}' cannot be null or empty.", nameof(kitName)));
+            }
+
             return m_Database.RemoveKitAsync(kitName);
         }
 
-        private async Task RegisterPermissionsAsync()
+        protected virtual async Task RegisterPermissionsAsync()
         {
             foreach (var kit in await m_Database.GetKitsAsync())
             {
@@ -112,7 +131,7 @@ namespace Kits.Providers
             }
         }
 
-        private void RegisterPermission(string kitName)
+        protected virtual void RegisterPermission(string kitName)
         {
             m_PermissionRegistry.RegisterPermission(m_Plugin, "kits." + kitName.ToLower());
         }
