@@ -21,7 +21,7 @@ namespace Kits.Databases
         {
         }
 
-        protected virtual KitsDbContext GetDbContext() => Plugin.LifetimeScope.Resolve<KitsDbContext>();
+        public virtual KitsDbContext GetDbContext() => Plugin.LifetimeScope.Resolve<KitsDbContext>();
 
         public async Task LoadDatabaseAsync()
         {

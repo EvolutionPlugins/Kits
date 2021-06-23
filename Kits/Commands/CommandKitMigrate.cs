@@ -1,13 +1,16 @@
 ﻿extern alias JetBrainsAnnotations;
 using JetBrainsAnnotations::JetBrains.Annotations;
+using Kits.API;
 using Kits.Databases;
-using Kits.Models;
-using OpenMod.API.Commands;
+using Kits.Databases.Mysql;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using OpenMod.API.Persistence;
 using OpenMod.Core.Commands;
 using OpenMod.Core.Console;
 using System;
 using System.Threading.Tasks;
+using Command = OpenMod.Core.Commands.Command;
 
 namespace Kits.Commands
 {
@@ -18,39 +21,28 @@ namespace Kits.Commands
     public class CommandKitMigrate : Command
     {
         private readonly IServiceProvider m_ServiceProvider;
-        private readonly IDataStore m_DataStore;
-        private readonly Kits m_Plugin;
+        private readonly IConfiguration m_Configuration;
 
-        public CommandKitMigrate(IServiceProvider serviceProvider, IDataStore dataStore, Kits plugin) : base(serviceProvider)
+        public CommandKitMigrate(IServiceProvider serviceProvider, KitsDbContext dbContext, IConfiguration configuration) : base(serviceProvider)
         {
             m_ServiceProvider = serviceProvider;
-            m_DataStore = dataStore;
-            m_Plugin = plugin;
+            m_Configuration = configuration;
         }
 
         protected override async Task OnExecuteAsync()
         {
-            if (!await m_DataStore.ExistsAsync("kits"))
-            {
-                throw new UserFriendlyException("Unable to find 'kits.data.yaml'");
-            }
-
-            var kits = await m_DataStore.LoadAsync<KitsData>("kits");
-            if (kits?.Kits == null)
-            {
-                throw new UserFriendlyException("Unable to load 'kits.data.yaml'");
-            }
-
             var mysql = new MySqlKitDatabase(m_ServiceProvider);
             await mysql.LoadDatabaseAsync();
 
-            foreach (var kit in kits.Kits)
-            {
-                await mysql.AddKitAsync(kit);
-            }
+            await using var dbContext = mysql.GetDbContext();
 
-            await PrintAsync("All kits data from 'kits.data.yaml' successfully migrated to MySQL");
-            await PrintAsync("Please set 'connectionType' to \"mysql\" in 'config.yaml' to enable MySQL database");
+            var oldTableName = m_Configuration["database:connectionTableName"];
+            var newTableName = dbContext.Model.FindEntityType(typeof(Kit)).GetTableName();
+
+            // maybe has other option to migrate data to other table
+            var affected = await dbContext.Database.ExecuteSqlRawAsync($"INSERT INTO `{newTableName}` (Id, Name, Cooldown, Cost, Money, VehicleId, Items) SELECT Id, Name, Cooldown, Cost, Money, VehicleId, Items FROM `{oldTableName}`");
+
+            await PrintAsync($"Successfully migrated {affected} kit(s) to the new table");
         }
     }
 }
