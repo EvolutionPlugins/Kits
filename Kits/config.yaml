@@ -5,4 +5,4 @@
   # Type of datastore that will be used
   # datastore (default): will create 'kits.data.yaml' file that saves all kits
   # mysql: will create table that saves all kits
-  connectionType: "mysql"
+  connectionType: "datastore"
