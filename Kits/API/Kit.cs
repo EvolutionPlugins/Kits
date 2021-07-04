@@ -79,8 +79,11 @@ namespace Kits.API
                 }
             }
 
-            await economyProvider.UpdateBalanceAsync(playerUser.Id, playerUser.Type, Money,
+            if (Money != 0)
+            {
+                await economyProvider.UpdateBalanceAsync(playerUser.Id, playerUser.Type, Money,
                 stringLocalizer["commands:kit:balanceUpdateReason:got"]);
+            }
         }
     }
 }
