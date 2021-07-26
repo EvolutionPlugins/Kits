@@ -1,6 +1,8 @@
 ﻿extern alias JetBrainsAnnotations;
 using EvolutionPlugins.Economy.Stub;
 using JetBrainsAnnotations::JetBrains.Annotations;
+using Kits.API.Database;
+using Kits.Databases;
 using Microsoft.Extensions.DependencyInjection;
 using OpenMod.API.Ioc;
 using OpenMod.API.Prioritization;
@@ -15,6 +17,12 @@ namespace Kits
             IServiceCollection serviceCollection)
         {
             serviceCollection.AddEconomyStub();
+
+            serviceCollection.Configure<KitDatabaseOptions>(x =>
+            {
+                x.AddProvider<DataStoreKitDatabase>();
+                x.AddProvider<MySqlKitDatabase>();
+            });
         }
     }
 }

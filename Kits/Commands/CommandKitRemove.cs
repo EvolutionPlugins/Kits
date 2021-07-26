@@ -15,10 +15,10 @@ namespace Kits.Commands
     [UsedImplicitly]
     public class CommandKitRemove : Command
     {
-        private readonly IKitStore m_KitStore;
+        private readonly IKitDatabaseManager m_KitStore;
         private readonly IStringLocalizer m_StringLocalizer;
 
-        public CommandKitRemove(IServiceProvider serviceProvider, IKitStore kitStore,
+        public CommandKitRemove(IServiceProvider serviceProvider, IKitDatabaseManager kitStore,
             IStringLocalizer stringLocalizer) : base(serviceProvider)
         {
             m_KitStore = kitStore;

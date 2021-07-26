@@ -14,7 +14,6 @@ using YamlDotNet.Serialization;
 
 namespace Kits.API
 {
-#nullable disable
     public class Kit
     {
         [YamlIgnore]
@@ -24,7 +23,7 @@ namespace Kits.API
 
         [StringLength(25)]
         [Required]
-        public string Name { get; set; }
+        public string Name { get; set; } = null!;
 
         public float Cooldown { get; set; }
 
@@ -34,7 +33,6 @@ namespace Kits.API
         [Column(TypeName = "decimal(18,2)")] // by default it creates decimal(65, 30)
         public decimal Money { get; set; }
 
-#nullable enable
         [StringLength(5)]
         public string? VehicleId { get; set; }
 

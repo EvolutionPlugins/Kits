@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Kits.API
+namespace Kits.API.Database
 {
-    public interface IKitDatabase
+    public interface IKitDatabaseProvider
     {
         Task LoadDatabaseAsync();
 

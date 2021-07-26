@@ -25,11 +25,11 @@ namespace Kits.Commands
         private static readonly bool s_IsUnturned = AppDomain.CurrentDomain.GetAssemblies()
             .Any(x => x.GetName().Name.Equals("OpenMod.Unturned.Module.Shared"));
 
-        private readonly IKitStore m_KitStore;
+        private readonly IKitDatabaseManager m_KitStore;
         private readonly IStringLocalizer m_StringLocalizer;
         private readonly IVehicleDirectory m_VehicleDirectory;
 
-        public CommandKitCreate(IServiceProvider serviceProvider, IKitStore kitStore,
+        public CommandKitCreate(IServiceProvider serviceProvider, IKitDatabaseManager kitStore,
             IStringLocalizer stringLocalizer, IVehicleDirectory vehicleDirectory) : base(serviceProvider)
         {
             m_KitStore = kitStore;

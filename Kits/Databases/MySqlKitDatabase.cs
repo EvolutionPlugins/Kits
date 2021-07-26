@@ -1,8 +1,9 @@
 ﻿using Autofac;
 using Kits.API;
+using Kits.API.Database;
 using Kits.Databases.Mysql;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 using OpenMod.API.Commands;
 using System;
 using System.Collections.Generic;
@@ -11,17 +12,18 @@ using System.Threading.Tasks;
 
 namespace Kits.Databases
 {
-    public class MySqlKitDatabase : KitDatabaseCore, IKitDatabase
+    public class MySqlKitDatabase : IKitDatabaseProvider
     {
-        public MySqlKitDatabase(IServiceProvider provider) : this(provider.GetRequiredService<Kits>())
+        private readonly ILifetimeScope m_LifetimeScope;
+        private readonly IStringLocalizer m_StringLocalizer;
+
+        public MySqlKitDatabase(ILifetimeScope lifetimeScope, IStringLocalizer stringLocalizer)
         {
+            m_LifetimeScope = lifetimeScope;
+            m_StringLocalizer = stringLocalizer;
         }
 
-        public MySqlKitDatabase(Kits plugin) : base(plugin)
-        {
-        }
-
-        public virtual KitsDbContext GetDbContext() => Plugin.LifetimeScope.Resolve<KitsDbContext>();
+        public virtual KitsDbContext GetDbContext() => m_LifetimeScope.Resolve<KitsDbContext>();
 
         public async Task LoadDatabaseAsync()
         {
@@ -35,7 +37,7 @@ namespace Kits.Databases
 
             if (await context.Kits.Where(x => x.Name.Equals(kit.Name)).AnyAsync())
             {
-                throw new UserFriendlyException(StringLocalizer["commands:kit:exist"]);
+                throw new UserFriendlyException(m_StringLocalizer["commands:kit:exist"]);
             }
 
             await context.Kits.AddAsync(kit);
