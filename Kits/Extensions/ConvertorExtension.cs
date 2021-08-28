@@ -19,7 +19,7 @@ namespace Kits.Extensions
             return new(item.Asset.ItemAssetId, item.State);
         }
 
-        public static byte[] ConvertToByteArray(this IList<KitItem>? items)
+        public static byte[] ConvertToByteArray(this List<KitItem>? items)
         {
             if (items == null)
             {
@@ -54,7 +54,8 @@ namespace Kits.Extensions
 
             br.ReadByte(); // save version, for now ignored
 
-            for (var i = 0; i < br.ReadInt32(); i++)
+            var count = br.ReadInt32();
+            for (var i = 0; i < count; i++)
             {
                 var kitItem = new KitItem();
                 kitItem.Deserialize(br);
