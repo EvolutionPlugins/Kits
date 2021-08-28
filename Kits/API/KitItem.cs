@@ -9,6 +9,7 @@ namespace Kits.API
 
         public KitItemState State { get; set; }
 
+
         public KitItem() : this(null, null)
         {
         }

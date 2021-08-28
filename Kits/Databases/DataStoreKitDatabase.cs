@@ -1,8 +1,6 @@
 ﻿extern alias JetBrainsAnnotations;
 using Kits.API;
-using Kits.API.Database;
 using Kits.Models;
-using Microsoft.Extensions.Localization;
 using OpenMod.API.Commands;
 using OpenMod.Core.Helpers;
 using System;
@@ -12,20 +10,15 @@ using System.Threading.Tasks;
 
 namespace Kits.Databases
 {
-    public class DataStoreKitDatabase : IKitDatabaseProvider, IDisposable
+    public class DataStoreKitDatabase : KitDatabaseCore, IKitDatabase, IDisposable
     {
         private const string c_KitsKey = "kits";
-
-        private readonly Kits m_Plugin;
-        private readonly IStringLocalizer m_StringLocalizer;
 
         private KitsData m_Data = null!;
         private IDisposable? m_FileWatcher;
 
-        public DataStoreKitDatabase(Kits plugin, IStringLocalizer stringLocalizer)
+        public DataStoreKitDatabase(Kits plugin) : base(plugin)
         {
-            m_Plugin = plugin;
-            m_StringLocalizer = stringLocalizer;
         }
 
         public async Task<bool> AddKitAsync(Kit kit)
@@ -37,7 +30,7 @@ namespace Kits.Databases
 
             if (m_Data.Kits.Any(x => x.Name.Equals(kit.Name, StringComparison.OrdinalIgnoreCase)))
             {
-                throw new UserFriendlyException(m_StringLocalizer["commands:kit:exist"]);
+                throw new UserFriendlyException(StringLocalizer["commands:kit:exist"]);
             }
 
             m_Data.Kits?.Add(kit);
@@ -59,7 +52,7 @@ namespace Kits.Databases
         {
             await LoadFromDisk();
 
-            m_FileWatcher = m_Plugin.DataStore.AddChangeWatcher(c_KitsKey, m_Plugin,
+            m_FileWatcher = Plugin.DataStore.AddChangeWatcher(c_KitsKey, Plugin,
                 () => AsyncHelper.RunSync(LoadFromDisk));
 
             await SaveToDisk();
@@ -67,9 +60,9 @@ namespace Kits.Databases
 
         private async Task LoadFromDisk()
         {
-            if (await m_Plugin.DataStore.ExistsAsync(c_KitsKey))
+            if (await Plugin.DataStore.ExistsAsync(c_KitsKey))
             {
-                m_Data = await m_Plugin.DataStore.LoadAsync<KitsData>(c_KitsKey) ?? new() { Kits = new() };
+                m_Data = await Plugin.DataStore.LoadAsync<KitsData>(c_KitsKey) ?? new() { Kits = new() };
             }
             else
             {
@@ -82,7 +75,7 @@ namespace Kits.Databases
             var index = m_Data.Kits?.FindIndex(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
             if (index < 0)
             {
-                throw new UserFriendlyException(m_StringLocalizer["commands:kit:remove:fail", new { Name = name }]);
+                throw new UserFriendlyException(StringLocalizer["commands:kit:remove:fail", new { Name = name }]);
             }
 
             m_Data.Kits?.RemoveAt(index!.Value);
@@ -116,7 +109,7 @@ namespace Kits.Databases
 
         private Task SaveToDisk()
         {
-            return m_Plugin.DataStore.SaveAsync(c_KitsKey, m_Data);
+            return Plugin.DataStore.SaveAsync(c_KitsKey, m_Data);
         }
     }
 }

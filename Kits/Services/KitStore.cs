@@ -1,17 +1,12 @@
-﻿using Autofac;
-using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
 using Kits.API;
-using Kits.API.Database;
 using Kits.Databases;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenMod.API.Eventing;
 using OpenMod.API.Ioc;
 using OpenMod.API.Permissions;
-using OpenMod.API.Prioritization;
 using OpenMod.Core.Helpers;
-using OpenMod.Core.Ioc;
 using OpenMod.Core.Plugins.Events;
 using System;
 using System.Collections.Generic;
@@ -19,69 +14,64 @@ using System.Threading.Tasks;
 
 namespace Kits.Providers
 {
-    [ServiceImplementation(Lifetime = ServiceLifetime.Singleton, Priority = Priority.Lowest)]
+    [PluginServiceImplementation(Lifetime = ServiceLifetime.Singleton)]
     [UsedImplicitly]
-    public class KitDatabaseManager : IKitDatabaseManager, IAsyncDisposable
+    public class KitStore : IKitStore, IAsyncDisposable
     {
         public const string c_KitsKey = "kits";
 
+        private readonly Kits m_Plugin;
         private readonly IPermissionRegistry m_PermissionRegistry;
-        private readonly ILogger<KitDatabaseManager> m_Logger;
-        private readonly IEventBus m_EventBus;
-        private readonly KitDatabaseOptions m_Options;
+        private readonly ILogger<KitStore> m_Logger;
+        private readonly IServiceProvider m_Provider;
+        private readonly IDisposable? m_ConfigurationChangedWatcher;
 
-        private IKitDatabaseProvider m_Database = null!;
-        private ILifetimeScope m_LifetimeScope = null!;
-        private IDisposable? m_ConfigurationChangedWatcher;
-        private Kits? m_Plugin;
+        private IKitDatabase m_Database = null!;
 
-        public IKitDatabaseProvider Database => m_Database;
+        public IKitDatabase Database => m_Database;
 
-        public KitDatabaseManager(IPermissionRegistry permissionRegistry, ILogger<KitDatabaseManager> logger,
-            IEventBus eventBus, KitDatabaseOptions options)
+        public KitStore(Kits plugin, IPermissionRegistry permissionRegistry, ILogger<KitStore> logger,
+            IEventBus eventBus, IServiceProvider provider)
         {
+            m_Plugin = plugin;
             m_PermissionRegistry = permissionRegistry;
             m_Logger = logger;
-            m_EventBus = eventBus;
-            m_Options = options;
+            m_Provider = provider;
+            AsyncHelper.RunSync(ParseLoadDatabase);
+
+            m_ConfigurationChangedWatcher =
+                eventBus.Subscribe<PluginConfigurationChangedEvent>(plugin, PluginConfigurationChanged);
         }
 
         private Task PluginConfigurationChanged(IServiceProvider serviceprovider, object? sender,
             PluginConfigurationChangedEvent @event)
         {
-            return @event.Plugin != m_Plugin ? Task.CompletedTask : InitAsync(m_LifetimeScope);
+            return @event.Plugin != m_Plugin ? Task.CompletedTask : ParseLoadDatabase();
         }
 
-        public async Task InitAsync(ILifetimeScope lifetimeScope)
+        private async Task ParseLoadDatabase()
         {
-            if (m_LifetimeScope != null && lifetimeScope != m_LifetimeScope)
+            var type = m_Plugin.Configuration["database:connectionType"];
+            m_Database = type.ToLower() switch
             {
-                return;
-            }
+                "mysql" => new MySqlKitDatabase(m_Provider),
+                "datastore" => new DataStoreKitDatabase(m_Plugin),
+                _ => null!
+            };
 
-            m_LifetimeScope = lifetimeScope;
-            var configuration = lifetimeScope.Resolve<IConfiguration>();
-            m_Plugin = lifetimeScope.Resolve<Kits>();
-
-            var configType = configuration["database:connectionType"];
-            var database = m_Options.GetPreferredDatabase(configType);
-
-            if (database == null)
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+            if (m_Database == null)
             {
-                m_Database = ActivatorUtilitiesEx.CreateInstance<DataStoreKitDatabase>(lifetimeScope);
+                m_Database = new DataStoreKitDatabase(m_Plugin);
                 m_Logger.LogWarning(
-                    $"Unable to parse {configType}. Setting to default: `datastore`");
+                    $"Unable to parse {type}. Setting to default: `datastore`");
             }
             else
             {
-                m_Logger.LogInformation($"Datastore type set to `{configType}`");
-                m_Database = (IKitDatabaseProvider)ActivatorUtilitiesEx.CreateInstance(lifetimeScope, database);
+                m_Logger.LogInformation($"Datastore type set to `{type}`");
             }
 
-            m_ConfigurationChangedWatcher = m_EventBus.Subscribe<PluginConfigurationChangedEvent>(m_Plugin,
-                PluginConfigurationChanged);
-
-            await m_Database.LoadDatabaseAsync();
+            await m_Database!.LoadDatabaseAsync();
             await RegisterPermissionsAsync();
         }
 
@@ -143,8 +133,9 @@ namespace Kits.Providers
 
         protected virtual void RegisterPermission(string kitName)
         {
-            m_PermissionRegistry.RegisterPermission(m_Plugin!, "kits." + kitName.ToLower());
+            m_PermissionRegistry.RegisterPermission(m_Plugin, "kits." + kitName.ToLower());
         }
+
 
         public ValueTask DisposeAsync()
         {

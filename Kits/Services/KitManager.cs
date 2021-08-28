@@ -1,5 +1,4 @@
-﻿using Autofac;
-using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
 using Kits.API;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
@@ -15,26 +14,24 @@ using System.Threading.Tasks;
 
 namespace Kits.Providers
 {
-    [ServiceImplementation(Lifetime = ServiceLifetime.Transient, Priority = Priority.Lowest)]
+    [PluginServiceImplementation(Lifetime = ServiceLifetime.Transient, Priority = Priority.Lowest)]
     [UsedImplicitly]
     public class KitManager : IKitManager
     {
         private readonly IEconomyProvider m_EconomyProvider;
-        private readonly Lazy<Kits> m_Kits;
         private readonly IKitCooldownStore m_KitCooldownStore;
-        private readonly IKitDatabaseManager m_KitStore;
+        private readonly IKitStore m_KitStore;
+        private readonly IStringLocalizer m_StringLocalizer;
         private readonly IPermissionChecker m_PermissionChecker;
         private readonly IServiceProvider m_ServiceProvider;
 
-        private IStringLocalizer m_StringLocalizer => m_Kits.Value.LifetimeScope.Resolve<IStringLocalizer>();
-
-        public KitManager(Lazy<Kits> kits, IKitCooldownStore kitCooldownStore, IKitDatabaseManager kitStore, IEconomyProvider economyProvider,
-            IPermissionChecker permissionChecker, IServiceProvider serviceProvider)
+        public KitManager(IEconomyProvider economyProvider, IKitCooldownStore kitCooldownStore, IKitStore kitStore,
+            IStringLocalizer stringLocalizer, IPermissionChecker permissionChecker, IServiceProvider serviceProvider)
         {
             m_EconomyProvider = economyProvider;
-            m_Kits = kits;
             m_KitCooldownStore = kitCooldownStore;
             m_KitStore = kitStore;
+            m_StringLocalizer = stringLocalizer;
             m_PermissionChecker = permissionChecker;
             m_ServiceProvider = serviceProvider;
         }
@@ -49,7 +46,7 @@ namespace Kits.Providers
             }
 
             if (!forceGiveKit && await m_PermissionChecker.CheckPermissionAsync(user,
-                $"{KitDatabaseManager.c_KitsKey}.{kit.Name}") != PermissionGrantResult.Grant)
+                $"{KitStore.c_KitsKey}.{kit.Name}") != PermissionGrantResult.Grant)
             {
                 throw new UserFriendlyException(m_StringLocalizer["commands:kit:noPermission", new { Kit = kit }]);
             }
@@ -88,7 +85,7 @@ namespace Kits.Providers
             foreach (var kit in await m_KitStore.GetKitsAsync())
             {
                 if (await m_PermissionChecker.CheckPermissionAsync(player,
-                    $"{KitDatabaseManager.c_KitsKey}.{kit.Name}") == PermissionGrantResult.Grant)
+                    $"{KitStore.c_KitsKey}.{kit.Name}") == PermissionGrantResult.Grant)
                 {
                     list.Add(kit);
                 }

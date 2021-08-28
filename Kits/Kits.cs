@@ -1,6 +1,6 @@
-﻿using Autofac;
-using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
 using Kits.API;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenMod.API.Plugins;
 using OpenMod.Core.Plugins;
@@ -16,15 +16,12 @@ namespace Kits
     public class Kits : OpenModUniversalPlugin
     {
         private readonly ILogger<Kits> m_Logger;
-        private readonly IKitDatabaseManager m_KitDatabase;
-        private readonly ILifetimeScope m_LifetimeScope;
+        private readonly IServiceProvider m_ServiceProvider;
 
-        public Kits(ILogger<Kits> logger, IServiceProvider serviceProvider, IKitDatabaseManager kitDatabase, ILifetimeScope lifetimeScope)
-            : base(serviceProvider)
+        public Kits(ILogger<Kits> logger, IServiceProvider serviceProvider) : base(serviceProvider)
         {
             m_Logger = logger;
-            m_KitDatabase = kitDatabase;
-            m_LifetimeScope = lifetimeScope;
+            m_ServiceProvider = serviceProvider;
         }
 
         protected override Task OnLoadAsync()
@@ -33,7 +30,9 @@ namespace Kits
             m_Logger.LogInformation("https://github.com/evolutionplugins \\ https://github.com/diffoz");
             m_Logger.LogInformation("Discord support: https://discord.gg/6KymqGv");
 
-            return m_KitDatabase.InitAsync(m_LifetimeScope);
+            m_ServiceProvider.GetRequiredService<IKitManager>(); /* just load database service */
+
+            return Task.CompletedTask;
         }
     }
 }

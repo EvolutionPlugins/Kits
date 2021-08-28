@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using OpenMod.API.Ioc;
 using OpenMod.API.Permissions;
 using OpenMod.API.Persistence;
-using OpenMod.API.Prioritization;
 using OpenMod.Core.Helpers;
 using OpenMod.Core.Permissions;
 using OpenMod.Extensions.Games.Abstractions.Players;
@@ -16,24 +15,27 @@ using System.Threading.Tasks;
 
 namespace Kits.Providers
 {
-    [ServiceImplementation(Lifetime = ServiceLifetime.Singleton, Priority = Priority.Lowest)]
+    [PluginServiceImplementation(Lifetime = ServiceLifetime.Singleton)]
     [UsedImplicitly]
     public class KitCooldownStore : IKitCooldownStore, IDisposable
     {
         private const string c_CooldownKey = "cooldowns";
         private const string c_NoCooldownPermission = "nocooldown";
 
-        private readonly Lazy<Kits> m_Kits;
+        private readonly IDataStore m_DataStore;
+        private readonly Kits m_Plugin;
         private readonly IPermissionChecker m_PermissionChecker;
 
         private KitsCooldownData m_KitsCooldownData = null!;
         private IDisposable? m_FileWatcher = null!;
-        private IDataStore m_DataStore = null!;
 
-        public KitCooldownStore(Lazy<Kits> kits, IPermissionChecker permissionChecker)
+        public KitCooldownStore(Kits plugin, IPermissionChecker permissionChecker)
         {
-            m_Kits = kits;
+            m_DataStore = plugin.DataStore;
+            m_Plugin = plugin;
             m_PermissionChecker = permissionChecker;
+
+            AsyncHelper.RunSync(LoadData);
         }
 
         public async Task<TimeSpan?> GetLastCooldownAsync(IPlayerUser player, string kitName)
@@ -94,17 +96,10 @@ namespace Kits.Providers
             }
         }
 
-        private async Task MaybeLoadData()
+        private async Task LoadData()
         {
-            if (m_FileWatcher != null)
-            {
-                return;
-            }
-
-            m_DataStore = m_Kits.Value.DataStore;
-
             await LoadFromDisk();
-            m_FileWatcher = m_DataStore.AddChangeWatcher(c_CooldownKey, m_Kits.Value,
+            m_FileWatcher = m_DataStore.AddChangeWatcher(c_CooldownKey, m_Plugin,
                 () => AsyncHelper.RunSync(LoadFromDisk));
         }
 
