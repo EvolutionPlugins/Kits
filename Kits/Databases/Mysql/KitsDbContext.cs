@@ -28,8 +28,8 @@ namespace Kits.Databases.Mysql
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            base.OnModelCreating(modelBuilder);
             modelBuilder.ApplyConfiguration(new KitConfiguration());
+            base.OnModelCreating(modelBuilder);
         }
 
         // https://stackoverflow.com/questions/44829824/how-to-store-json-in-an-entity-field-with-ef-core

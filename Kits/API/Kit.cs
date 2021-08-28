@@ -40,7 +40,7 @@ namespace Kits.API
 
         [MaxLength(ushort.MaxValue)]
         [Column(TypeName = "blob")] // by default it creates longblob (2^32 - 1), we need only ushort.MaxValue length ( 65535 )
-        public IList<KitItem>? Items { get; set; }
+        public List<KitItem>? Items { get; set; }
 
         public virtual async Task GiveKitToPlayer(IPlayerUser playerUser, IServiceProvider serviceProvider)
         {
