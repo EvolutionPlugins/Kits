@@ -33,12 +33,12 @@ namespace Kits.Databases
         {
             await using var context = GetDbContext();
 
-            if (await context.Kits.Where(x => x.Name.Equals(kit.Name)).AnyAsync())
+            if (await context.Kits.Where(x => x.Name.Equals(kit.Name, StringComparison.OrdinalIgnoreCase)).AnyAsync())
             {
                 throw new UserFriendlyException(StringLocalizer["commands:kit:exist"]);
             }
 
-            await context.Kits.AddAsync(kit);
+            context.Kits.Add(kit);
             return await context.SaveChangesAsync() > 0;
         }
 

@@ -40,7 +40,7 @@ namespace Kits.Databases
 
         public Task<Kit?> FindKitByNameAsync(string name)
         {
-            return Task.FromResult(m_Data.Kits?.Find(x => x.Name.Equals(name)));
+            return Task.FromResult(m_Data.Kits?.Find(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)));
         }
 
         public Task<IReadOnlyCollection<Kit>> GetKitsAsync()

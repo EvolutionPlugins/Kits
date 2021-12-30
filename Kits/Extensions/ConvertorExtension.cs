@@ -1,6 +1,5 @@
 ﻿using Kits.API;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OpenMod.Extensions.Games.Abstractions.Items;
@@ -75,12 +74,12 @@ namespace Kits.Extensions
             v => v.ConvertToKitItems()
             );
 
-           /* var comparer = new ValueComparer<List<KitItem>?>
-            (
-                (l, r) => l == r,
-                v => v == null ? 0 : v.GetHashCode(),
-                v => v.ConvertToByteArray().ConvertToKitItems()
-            );*/
+            /* var comparer = new ValueComparer<List<KitItem>?>
+             (
+                 (l, r) => l == r,
+                 v => v == null ? 0 : v.GetHashCode(),
+                 v => v.ConvertToByteArray().ConvertToKitItems()
+             );*/
 
             propertyBuilder.HasConversion(converter);
             propertyBuilder.Metadata.SetValueConverter(converter);

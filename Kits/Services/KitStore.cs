@@ -63,15 +63,14 @@ namespace Kits.Providers
             if (m_Database == null)
             {
                 m_Database = new DataStoreKitDatabase(m_Plugin);
-                m_Logger.LogWarning(
-                    $"Unable to parse {type}. Setting to default: `datastore`");
+                m_Logger.LogWarning("Unable to parse {DatabaseType}. Setting to default: `datastore`", type);
             }
             else
             {
-                m_Logger.LogInformation($"Datastore type set to `{type}`");
+                m_Logger.LogInformation("Datastore type set to `{DatabaseType}`", type);
             }
 
-            await m_Database!.LoadDatabaseAsync();
+            await m_Database.LoadDatabaseAsync();
             await RegisterPermissionsAsync();
         }
 
@@ -135,7 +134,6 @@ namespace Kits.Providers
         {
             m_PermissionRegistry.RegisterPermission(m_Plugin, "kits." + kitName.ToLower());
         }
-
 
         public ValueTask DisposeAsync()
         {
