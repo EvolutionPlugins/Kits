@@ -1,5 +1,5 @@
 commands:
-  kits: "Your available kits: {Kits:cond:{Kits:l:{Name}{Cost:cond:!=0?({}{MoneySymbol})|}|, }|'none'}"
+  kits: "Your available kits: {Kits:cond:{Kits:list:{Name}{Cost:cond:!=0?({}{MoneySymbol})|}|, }|'none'}"
   kit:
     success: "Kit {Kit.Name} successfully received"
     exist: "Kit with name {Name} already exists"
