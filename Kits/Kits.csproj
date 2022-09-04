@@ -36,12 +36,12 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="OpenMod.Core" Version="3.2.7" />
-    <PackageReference Include="OpenMod.EntityFrameworkCore.MySql" Version="3.2.7" />
-    <PackageReference Include="OpenMod.Extensions.Economy.Abstractions" Version="3.2.7" />
-    <PackageReference Include="OpenMod.Extensions.Games.Abstractions" Version="3.2.7" />
+    <PackageReference Include="OpenMod.Core" Version="3.3.4" />
+    <PackageReference Include="OpenMod.EntityFrameworkCore.MySql" Version="3.3.4" />
+    <PackageReference Include="OpenMod.Extensions.Economy.Abstractions" Version="3.3.4" />
+    <PackageReference Include="OpenMod.Extensions.Games.Abstractions" Version="3.3.4" />
     <PackageReference Include="OpenMod.UnityEngine.Redist" Version="2019.4.10" />
-    <PackageReference Include="OpenMod.Unturned.Redist" Version="3.21.33-preview.1" />
+    <PackageReference Include="OpenMod.Unturned.Redist" Version="3.22.15" />
   </ItemGroup>
 
   <ItemGroup>
