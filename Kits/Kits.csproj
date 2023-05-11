@@ -9,7 +9,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateNugetPackage>true</GenerateNugetPackage>
     <Product>Kits</Product>
-    <LangVersion>latest</LangVersion>
+    <LangVersion>10</LangVersion>
     <Nullable>enable</Nullable>
     <WarningsAsErrors>nullable</WarningsAsErrors>
     <Version>0.0.0</Version>
@@ -22,8 +22,6 @@
     <RepositoryUrl>https://github.com/DiFFoZ/Kits</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/DiFFoZ/Kits</PackageProjectUrl>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <EnableNETAnalyzers>true</EnableNETAnalyzers>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,12 +34,9 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="OpenMod.Core" Version="3.3.4" />
-    <PackageReference Include="OpenMod.EntityFrameworkCore.MySql" Version="3.3.4" />
-    <PackageReference Include="OpenMod.Extensions.Economy.Abstractions" Version="3.3.4" />
-    <PackageReference Include="OpenMod.Extensions.Games.Abstractions" Version="3.3.4" />
-    <PackageReference Include="OpenMod.UnityEngine.Redist" Version="2019.4.10" />
-    <PackageReference Include="OpenMod.Unturned.Redist" Version="3.22.15" />
+    <PackageReference Include="OpenMod.EntityFrameworkCore.MySql" Version="3.3.14" />
+    <PackageReference Include="OpenMod.UnityEngine.Redist" Version="2020.3.38" />
+    <PackageReference Include="OpenMod.Unturned.Redist" Version="3.23.5" />
   </ItemGroup>
 
   <ItemGroup>
@@ -50,15 +45,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\.editorconfig" Link=".editorconfig" />
+    <ProjectReference Include="..\Kits.API\Kits.API.csproj" />
   </ItemGroup>
-
-  <Target Name="ChangeAliasesOfNugetRefs" BeforeTargets="FindReferenceAssembliesForReferences;ResolveReferences">
-    <ItemGroup>
-      <ReferencePath Condition="'%(FileName)' == 'JetBrains.Annotations'">
-        <Aliases>JetBrainsAnnotations</Aliases>
-      </ReferencePath>
-    </ItemGroup>
-  </Target>
 
 </Project>

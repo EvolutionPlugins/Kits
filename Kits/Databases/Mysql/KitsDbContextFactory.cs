@@ -1,8 +1,7 @@
 ﻿using OpenMod.EntityFrameworkCore.MySql;
 
-namespace Kits.Databases.Mysql
+namespace Kits.Databases.MySql;
+
+public class KitsDbContextFactory : OpenModMySqlDbContextFactory<KitsDbContext>
 {
-    public class KitsDbContextFactory : OpenModMySqlDbContextFactory<KitsDbContext>
-    {
-    }
 }

@@ -1,20 +1,24 @@
-﻿extern alias JetBrainsAnnotations;
-using EvolutionPlugins.Economy.Stub;
-using JetBrainsAnnotations::JetBrains.Annotations;
+﻿using EvolutionPlugins.Economy.Stub;
+using Kits.API.Databases;
+using Kits.Databases;
 using Microsoft.Extensions.DependencyInjection;
 using OpenMod.API.Ioc;
 using OpenMod.API.Prioritization;
 
-namespace Kits
+namespace Kits;
+
+[Priority(Priority = Priority.Lowest)]
+public class ServiceConfigurator : IServiceConfigurator
 {
-    [UsedImplicitly]
-    [Priority(Priority = Priority.Lowest)]
-    public class ServiceConfigurator : IServiceConfigurator
+    public void ConfigureServices(IOpenModServiceConfigurationContext openModStartupContext,
+        IServiceCollection serviceCollection)
     {
-        public void ConfigureServices(IOpenModServiceConfigurationContext openModStartupContext,
-            IServiceCollection serviceCollection)
+        serviceCollection.AddEconomyStub();
+
+        serviceCollection.Configure<KitDatabaseOptions>(o =>
         {
-            serviceCollection.AddEconomyStub();
-        }
+            o.AddProvider<DataStoreKitDataStore>("datastore");
+            o.AddProvider<MySqlKitDataStore>("mysql");
+        });
     }
 }

@@ -1,14 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30204.135
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33706.43
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kits", "Kits\Kits.csproj", "{6B69ACA9-CCA3-4132-A498-72F126E9D8F2}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{3E0BB3AB-F7F2-4870-B0DC-E75A7CB14B2A}"
-	ProjectSection(SolutionItems) = preProject
-		.editorconfig = .editorconfig
-	EndProjectSection
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kits.API", "Kits.API\Kits.API.csproj", "{C01A7068-329C-4F04-8A6E-219017B34C24}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "api", "api", "{19EB88F4-90BD-493C-BD03-625387776648}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -20,9 +19,16 @@ Global
 		{6B69ACA9-CCA3-4132-A498-72F126E9D8F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6B69ACA9-CCA3-4132-A498-72F126E9D8F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6B69ACA9-CCA3-4132-A498-72F126E9D8F2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C01A7068-329C-4F04-8A6E-219017B34C24}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C01A7068-329C-4F04-8A6E-219017B34C24}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C01A7068-329C-4F04-8A6E-219017B34C24}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C01A7068-329C-4F04-8A6E-219017B34C24}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C01A7068-329C-4F04-8A6E-219017B34C24} = {19EB88F4-90BD-493C-BD03-625387776648}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BEBF1D37-F1C1-4674-9D07-36B1EAC90A6B}

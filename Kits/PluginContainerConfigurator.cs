@@ -1,14 +1,13 @@
-﻿using Kits.Databases.Mysql;
+﻿using Kits.Databases.MySql;
 using OpenMod.API.Plugins;
 using OpenMod.EntityFrameworkCore.MySql.Extensions;
 
-namespace Kits
+namespace Kits;
+
+public class PluginContainerConfigurator : IPluginContainerConfigurator
 {
-    public class PluginContainerConfigurator : IPluginContainerConfigurator
+    public void ConfigureContainer(IPluginServiceConfigurationContext context)
     {
-        public void ConfigureContainer(IPluginServiceConfigurationContext context)
-        {
-            context.ContainerBuilder.AddMySqlDbContext<KitsDbContext>();
-        }
+        context.ContainerBuilder.AddMySqlDbContext<KitsDbContext>();
     }
 }
