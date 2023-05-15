@@ -12,18 +12,18 @@ using System.Threading.Tasks;
 
 namespace Kits.Databases;
 
-public class DataStoreKitDataStore : KitDataStoreCore, IKitDatabaseProvider, IDisposable
+public class DataStoreKitStoreProvider : KitStoreProviderCore, IKitStoreProvider, IDisposable
 {
     private const string c_KitsKey = "kits";
 
     private KitsData m_Data = null!;
     private IDisposable? m_FileWatcher;
 
-    public DataStoreKitDataStore(ILifetimeScope lifetimeScope) : base(lifetimeScope)
+    public DataStoreKitStoreProvider(ILifetimeScope lifetimeScope) : base(lifetimeScope)
     {
     }
 
-    public async Task<bool> AddKitAsync(Kit kit)
+    public async Task AddKitAsync(Kit kit)
     {
         if (kit is null)
         {
@@ -37,7 +37,6 @@ public class DataStoreKitDataStore : KitDataStoreCore, IKitDatabaseProvider, IDi
 
         m_Data.Kits?.Add(kit);
         await SaveToDisk();
-        return true;
     }
 
     public Task<Kit?> FindKitByNameAsync(string name)
@@ -50,7 +49,7 @@ public class DataStoreKitDataStore : KitDataStoreCore, IKitDatabaseProvider, IDi
         return Task.FromResult((IReadOnlyCollection<Kit>)(m_Data.Kits ?? new()));
     }
 
-    public async Task LoadDatabaseAsync()
+    public async Task InitAsync()
     {
         await LoadFromDisk();
 
@@ -74,7 +73,7 @@ public class DataStoreKitDataStore : KitDataStoreCore, IKitDatabaseProvider, IDi
         m_Data = new() { Kits = new() };
     }
 
-    public async Task<bool> RemoveKitAsync(string name)
+    public async Task RemoveKitAsync(string name)
     {
         var index = m_Data.Kits?.FindIndex(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
         if (index < 0)
@@ -84,10 +83,9 @@ public class DataStoreKitDataStore : KitDataStoreCore, IKitDatabaseProvider, IDi
 
         m_Data.Kits?.RemoveAt(index!.Value);
         await SaveToDisk();
-        return true;
     }
 
-    public async Task<bool> UpdateKitAsync(Kit kit)
+    public async Task UpdateKitAsync(Kit kit)
     {
         if (kit is null)
         {
@@ -98,12 +96,11 @@ public class DataStoreKitDataStore : KitDataStoreCore, IKitDatabaseProvider, IDi
             x => x.Name.Equals(kit.Name, StringComparison.OrdinalIgnoreCase));
         if (index < 0)
         {
-            return false;
+            return;
         }
 
         m_Data.Kits![index!.Value] = kit;
         await SaveToDisk();
-        return true;
     }
 
     public void Dispose()
@@ -114,5 +111,10 @@ public class DataStoreKitDataStore : KitDataStoreCore, IKitDatabaseProvider, IDi
     private Task SaveToDisk()
     {
         return DataStore.SaveAsync(c_KitsKey, m_Data);
+    }
+
+    public Task<bool> IsKitExists(string name)
+    {
+        throw new NotImplementedException();
     }
 }

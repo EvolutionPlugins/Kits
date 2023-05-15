@@ -1,5 +1,7 @@
 ﻿using EvolutionPlugins.Economy.Stub;
+using Kits.API.Cooldowns;
 using Kits.API.Databases;
+using Kits.Cooldowns.Providers;
 using Kits.Databases;
 using Microsoft.Extensions.DependencyInjection;
 using OpenMod.API.Ioc;
@@ -15,10 +17,15 @@ public class ServiceConfigurator : IServiceConfigurator
     {
         serviceCollection.AddEconomyStub();
 
-        serviceCollection.Configure<KitDatabaseOptions>(o =>
+        serviceCollection.Configure<KitStoreOptions>(o =>
         {
-            o.AddProvider<DataStoreKitDataStore>("datastore");
-            o.AddProvider<MySqlKitDataStore>("mysql");
+            o.AddProvider<DataStoreKitStoreProvider>("datastore");
+            o.AddProvider<MySqlKitStoreProvider>("mysql");
+        });
+
+        serviceCollection.Configure<KitCooldownOptions>(o =>
+        {
+            o.AddProvider<DataStoreKitCooldownStoreProvider>("datastore");
         });
     }
 }

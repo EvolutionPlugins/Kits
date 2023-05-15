@@ -4,13 +4,13 @@ using OpenMod.API.Persistence;
 
 namespace Kits.Databases;
 
-public abstract class KitDataStoreCore
+public abstract class KitStoreProviderCore
 {
     protected IDataStore DataStore { get; }
     protected IStringLocalizer StringLocalizer { get; }
     protected ILifetimeScope LifetimeScope { get; }
 
-    protected KitDataStoreCore(ILifetimeScope lifetimeScope)
+    protected KitStoreProviderCore(ILifetimeScope lifetimeScope)
     {
         StringLocalizer = lifetimeScope.Resolve<IStringLocalizer>();
         DataStore = lifetimeScope.Resolve<IDataStore>();

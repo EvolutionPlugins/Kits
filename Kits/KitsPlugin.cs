@@ -28,8 +28,6 @@ public class KitsPlugin : OpenModUniversalPlugin
         m_Logger.LogInformation("https://github.com/evolutionplugins \\ https://github.com/diffoz");
         m_Logger.LogInformation("Discord support: https://discord.gg/6KymqGv");
 
-        m_ServiceProvider.GetRequiredService<IKitManager>(); /* just load database service */
-
-        return Task.CompletedTask;
+        return m_ServiceProvider.GetRequiredService<IKitStore>().InitAsync();
     }
 }

@@ -12,5 +12,7 @@ public interface IKitManager
 {
     Task GiveKitAsync(IPlayerUser user, string name, ICommandActor? instigator = null, bool forceGiveKit = false);
 
+    Task GiveKitAsync(IPlayerUser user, Kit kit, ICommandActor? instigator = null, bool forceGiveKit = false);
+
     Task<IReadOnlyCollection<Kit>> GetAvailableKitsForPlayerAsync(IPlayerUser player);
 }

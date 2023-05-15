@@ -1,12 +1,14 @@
-﻿using Kits.API.Cooldowns;
-using Kits.Cooldowns.Models;
+﻿using Autofac;
+using Kits.API.Cooldowns;
+using Kits.Cooldowns.Providers;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using OpenMod.API.Ioc;
 using OpenMod.API.Permissions;
-using OpenMod.API.Persistence;
 using OpenMod.Core.Helpers;
 using OpenMod.Core.Permissions;
-using OpenMod.Extensions.Games.Abstractions.Players;
 using System;
 using System.Threading.Tasks;
 
@@ -15,99 +17,80 @@ using System.Threading.Tasks;
 namespace Kits.Cooldowns;
 
 [PluginServiceImplementation(Lifetime = ServiceLifetime.Singleton)]
-public class KitCooldownStore : IKitCooldownStore, IDisposable
+public class KitCooldownStore : IKitCooldownStore, IAsyncDisposable
 {
-    private const string c_CooldownKey = "cooldowns";
     private const string c_NoCooldownPermission = "nocooldown";
 
-    private readonly IDataStore m_DataStore;
     private readonly KitsPlugin m_Plugin;
     private readonly IPermissionChecker m_PermissionChecker;
+    private readonly IOptions<KitCooldownOptions> m_Options;
+    private readonly IServiceProvider m_ServiceProvider;
+    private readonly ILogger<KitCooldownStore> m_Logger;
 
-    private KitsCooldownData m_KitsCooldownData = null!;
-    private IDisposable? m_FileWatcher;
+    private IKitCooldownStoreProvider m_CooldownProvider = null!;
 
-    public KitCooldownStore(KitsPlugin plugin, IPermissionChecker permissionChecker)
+    public KitCooldownStore(KitsPlugin plugin, IPermissionChecker permissionChecker, IOptions<KitCooldownOptions> options, IServiceProvider serviceProvider,
+        ILogger<KitCooldownStore> logger)
     {
-        m_DataStore = plugin.DataStore;
         m_Plugin = plugin;
         m_PermissionChecker = permissionChecker;
+        m_Options = options;
+        m_ServiceProvider = serviceProvider;
+        m_Logger = logger;
 
-        AsyncHelper.RunSync(LoadData);
+        AsyncHelper.RunSync(InitAsync);
     }
 
-    public async Task<TimeSpan?> GetLastCooldownAsync(IPlayerUser player, string kitName)
+    private async Task InitAsync()
     {
-        if (await m_PermissionChecker.CheckPermissionAsync(player, c_NoCooldownPermission) ==
-            PermissionGrantResult.Grant
-            || !m_KitsCooldownData.KitsCooldown!.TryGetValue(player.Id, out var kitCooldowns))
+        var configuration = m_Plugin.LifetimeScope.Resolve<IConfiguration>();
+        var type = configuration["cooldowns:connectionType"] ?? string.Empty;
+        var providerType = m_Options.Value.FindType(type);
+
+        if (providerType != null)
         {
-            return null;
+            m_Logger.LogInformation("Cooldown store type set to `{DatabaseType}`", type);
+            try
+            {
+                m_CooldownProvider = (ActivatorUtilities.CreateInstance(m_ServiceProvider, providerType) as IKitCooldownStoreProvider)!;
+            }
+            catch (Exception ex)
+            {
+                m_Logger.LogError(ex, "Failed to initialize {CooldownStoreName}. Defaulting to `datastore`", providerType.Name);
+            }
+        }
+        else
+        {
+            m_Logger.LogWarning("Unable to parse {DatabaseType}. Setting to default: `datastore`", type);
         }
 
-        var kitCooldown = kitCooldowns!.Find(x =>
-            x.KitName?.Equals(kitName, StringComparison.CurrentCultureIgnoreCase) == true);
-        return kitCooldown == null ? null : DateTime.Now - kitCooldown.KitCooldown;
+        m_CooldownProvider ??= new DataStoreKitCooldownStoreProvider(m_Plugin);
+
+        await m_CooldownProvider.InitAsync();
     }
 
-    public async Task RegisterCooldownAsync(IPlayerUser player, string kitName, DateTime time)
+    public async Task<TimeSpan?> GetLastCooldownAsync(IPermissionActor actor, string kitName)
     {
-        if (await m_PermissionChecker.CheckPermissionAsync(player, c_NoCooldownPermission) ==
-            PermissionGrantResult.Grant)
+        return await HasNoCooldownPermission(actor) ? null : await m_CooldownProvider.GetLastCooldownAsync(actor, kitName);
+    }
+
+    public async Task RegisterCooldownAsync(IPermissionActor actor, string kitName, DateTime time)
+    {
+        if (await HasNoCooldownPermission(actor))
         {
             return;
         }
 
-        kitName = kitName.ToLower();
-
-        if (m_KitsCooldownData.KitsCooldown!.TryGetValue(player.Id, out var kitCooldowns))
-        {
-            var kitCooldown = kitCooldowns!.Find(x => x.KitName == kitName);
-            if (kitCooldown == null)
-            {
-                kitCooldown = new() { KitName = kitName };
-                kitCooldowns.Add(kitCooldown);
-            }
-
-            kitCooldown.KitCooldown = time;
-        }
-        else
-        {
-            m_KitsCooldownData.KitsCooldown.Add(player.Id,
-                new() { new() { KitCooldown = time, KitName = kitName } });
-        }
-
-        await SaveData();
+        await m_CooldownProvider.RegisterCooldownAsync(actor, kitName, time);
     }
 
-    private async Task LoadFromDisk()
+    private async Task<bool> HasNoCooldownPermission(IPermissionActor actor)
     {
-        if (await m_DataStore.ExistsAsync(c_CooldownKey))
-        {
-            m_KitsCooldownData = await m_DataStore.LoadAsync<KitsCooldownData>(c_CooldownKey) ??
-                                 new() { KitsCooldown = new() };
-        }
-        else
-        {
-            m_KitsCooldownData = new() { KitsCooldown = new() };
-            await SaveData();
-        }
+        return await m_PermissionChecker.CheckPermissionAsync(actor, c_NoCooldownPermission) is PermissionGrantResult.Grant;
     }
 
-    private async Task LoadData()
+    public ValueTask DisposeAsync()
     {
-        await LoadFromDisk();
-        m_FileWatcher = m_DataStore.AddChangeWatcher(c_CooldownKey, m_Plugin,
-            () => AsyncHelper.RunSync(LoadFromDisk));
-    }
-
-    private Task SaveData()
-    {
-        return m_DataStore.SaveAsync(c_CooldownKey, m_KitsCooldownData);
-    }
-
-    public void Dispose()
-    {
-        m_FileWatcher?.Dispose();
+        return m_CooldownProvider == null ? new() : new(m_CooldownProvider.DisposeSyncOrAsync());
     }
 }

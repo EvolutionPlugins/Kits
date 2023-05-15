@@ -11,25 +11,25 @@ using System.Threading.Tasks;
 
 namespace Kits.Databases;
 
-public class MySqlKitDataStore : KitDataStoreCore, IKitDatabaseProvider
+public class MySqlKitStoreProvider : KitStoreProviderCore, IKitStoreProvider
 {
-    public MySqlKitDataStore(IServiceProvider provider) : this(provider.GetRequiredService<KitsPlugin>().LifetimeScope)
+    public MySqlKitStoreProvider(IServiceProvider provider) : this(provider.GetRequiredService<KitsPlugin>().LifetimeScope)
     {
     }
 
-    public MySqlKitDataStore(ILifetimeScope lifetimeScope) : base(lifetimeScope)
+    public MySqlKitStoreProvider(ILifetimeScope lifetimeScope) : base(lifetimeScope)
     {
     }
 
     protected virtual KitsDbContext GetDbContext() => LifetimeScope.Resolve<KitsDbContext>();
 
-    public async Task LoadDatabaseAsync()
+    public async Task InitAsync()
     {
         await using var context = GetDbContext();
         await context.Database.MigrateAsync();
     }
 
-    public async Task<bool> AddKitAsync(Kit kit)
+    public async Task AddKitAsync(Kit kit)
     {
         await using var context = GetDbContext();
 
@@ -39,7 +39,7 @@ public class MySqlKitDataStore : KitDataStoreCore, IKitDatabaseProvider
         }
 
         context.Kits.Add(kit);
-        return await context.SaveChangesAsync() > 0;
+        await context.SaveChangesAsync();
     }
 
     public async Task<Kit?> FindKitByNameAsync(string name)
@@ -57,7 +57,7 @@ public class MySqlKitDataStore : KitDataStoreCore, IKitDatabaseProvider
         return await context.Kits.AsNoTracking().ToListAsync();
     }
 
-    public async Task<bool> RemoveKitAsync(string name)
+    public async Task RemoveKitAsync(string name)
     {
         await using var context = GetDbContext();
 
@@ -65,19 +65,24 @@ public class MySqlKitDataStore : KitDataStoreCore, IKitDatabaseProvider
             .FirstOrDefaultAsync(x => x.Name == name);
         if (kit == null)
         {
-            return false;
+            return;
         }
 
         context.Kits.Remove(kit);
-
-        return await context.SaveChangesAsync() > 0;
+        await context.SaveChangesAsync();
     }
 
-    public async Task<bool> UpdateKitAsync(Kit kit)
+    public async Task UpdateKitAsync(Kit kit)
     {
         await using var context = GetDbContext();
 
         context.Kits.Update(kit);
-        return await context.SaveChangesAsync() > 0;
+        await context.SaveChangesAsync();
+    }
+
+    public async Task<bool> IsKitExists(string name)
+    {
+        await using var context = GetDbContext();
+        return await context.Kits.AnyAsync(x => x.Name == name);
     }
 }

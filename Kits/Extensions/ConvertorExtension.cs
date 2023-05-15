@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OpenMod.Extensions.Games.Abstractions.Items;
-using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -20,20 +19,18 @@ internal static class ConvertorExtension
 
     public static byte[] ConvertToByteArray(this List<KitItem>? items)
     {
-        if (items == null)
-        {
-            return Array.Empty<byte>();
-        }
-
         using var ms = new MemoryStream();
         using var bw = new BinaryWriter(ms);
 
         bw.Write(s_SaveVersion);
-        bw.Write(items.Count);
+        bw.Write(items?.Count ?? 0);
 
-        foreach (var item in items)
+        if (items != null)
         {
-            item.Serialize(bw);
+            foreach (var item in items)
+            {
+                item.Serialize(bw);
+            }
         }
 
         return ms.ToArray();
@@ -41,7 +38,7 @@ internal static class ConvertorExtension
 
     public static List<KitItem>? ConvertToKitItems(this byte[]? block)
     {
-        if (block == null)
+        if (block == null || block.Length == 0)
         {
             return null;
         }

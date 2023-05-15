@@ -36,8 +36,7 @@ public class KitManager : IKitManager
         m_ServiceProvider = serviceProvider;
     }
 
-    public async Task GiveKitAsync(IPlayerUser user, string name, ICommandActor? instigator = null,
-        bool forceGiveKit = false)
+    public async Task GiveKitAsync(IPlayerUser user, string name, ICommandActor? instigator = null, bool forceGiveKit = false)
     {
         var kit = await m_KitStore.FindKitByNameAsync(name);
         if (kit == null)
@@ -45,13 +44,17 @@ public class KitManager : IKitManager
             throw new UserFriendlyException(m_StringLocalizer["commands:kit:notFound", new { Name = name }]);
         }
 
-        if (!forceGiveKit && await m_PermissionChecker.CheckPermissionAsync(user,
-            $"{KitStore.c_KitsKey}.{kit.Name}") != PermissionGrantResult.Grant)
+        await GiveKitAsync(user, kit, instigator, forceGiveKit);
+    }
+
+    public async Task GiveKitAsync(IPlayerUser user, Kit kit, ICommandActor? instigator = null, bool forceGiveKit = false)
+    {
+        if (!forceGiveKit && await CheckPermissionKitAsync(user, kit.Name) != PermissionGrantResult.Grant)
         {
             throw new UserFriendlyException(m_StringLocalizer["commands:kit:noPermission", new { Kit = kit }]);
         }
 
-        var cooldown = await m_KitCooldownStore.GetLastCooldownAsync(user, name);
+        var cooldown = await m_KitCooldownStore.GetLastCooldownAsync(user, kit.Name);
         if (!forceGiveKit && cooldown != null && cooldown.Value.TotalSeconds < kit.Cooldown)
         {
             throw new UserFriendlyException(m_StringLocalizer["commands:kit:cooldown",
@@ -64,7 +67,7 @@ public class KitManager : IKitManager
                 m_StringLocalizer["commands:kit:balanceUpdateReason:buy", new { Kit = kit }]);
         }
 
-        await m_KitCooldownStore.RegisterCooldownAsync(user, name, DateTime.Now);
+        await m_KitCooldownStore.RegisterCooldownAsync(user, kit.Name, DateTime.Now);
 
         await kit.GiveKitToPlayer(user, m_ServiceProvider);
 
@@ -81,13 +84,18 @@ public class KitManager : IKitManager
         var list = new List<Kit>();
         foreach (var kit in await m_KitStore.GetKitsAsync())
         {
-            if (await m_PermissionChecker.CheckPermissionAsync(player,
-                $"{KitStore.c_KitsKey}.{kit.Name}") == PermissionGrantResult.Grant)
+            if (await CheckPermissionKitAsync(player, kit.Name) == PermissionGrantResult.Grant)
             {
                 list.Add(kit);
             }
         }
 
         return list;
+    }
+
+    private Task<PermissionGrantResult> CheckPermissionKitAsync(IPermissionActor actor, string kitName)
+    {
+        var permission = "kits." + kitName;
+        return m_PermissionChecker.CheckPermissionAsync(actor, permission);
     }
 }
