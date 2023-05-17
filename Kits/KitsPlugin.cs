@@ -22,12 +22,12 @@ public class KitsPlugin : OpenModUniversalPlugin
         m_ServiceProvider = serviceProvider;
     }
 
-    protected override Task OnLoadAsync()
+    protected override async Task OnLoadAsync()
     {
         m_Logger.LogInformation("Made with <3 by EvolutionPlugins");
         m_Logger.LogInformation("https://github.com/evolutionplugins \\ https://github.com/diffoz");
         m_Logger.LogInformation("Discord support: https://discord.gg/6KymqGv");
 
-        return m_ServiceProvider.GetRequiredService<IKitStore>().InitAsync();
+        await m_ServiceProvider.GetRequiredService<IKitStore>().InitAsync();
     }
 }

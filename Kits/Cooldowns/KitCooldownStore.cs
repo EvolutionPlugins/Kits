@@ -7,21 +7,27 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OpenMod.API.Ioc;
 using OpenMod.API.Permissions;
+using OpenMod.API.Plugins;
 using OpenMod.Core.Helpers;
 using OpenMod.Core.Permissions;
 using System;
+using System.Reflection;
 using System.Threading.Tasks;
 
 [assembly: RegisterPermission("nocooldown", Description = "Allows use kit without waiting for cooldown")]
 
 namespace Kits.Cooldowns;
 
-[PluginServiceImplementation(Lifetime = ServiceLifetime.Singleton)]
+[ServiceImplementation(Lifetime = ServiceLifetime.Singleton)]
 public class KitCooldownStore : IKitCooldownStore, IAsyncDisposable
 {
-    private const string c_NoCooldownPermission = "nocooldown";
+    private static readonly string s_NoCooldownFullPermission = "nocooldown";
+    static KitCooldownStore()
+    {
+        s_NoCooldownFullPermission = typeof(KitCooldownStore).Assembly.GetCustomAttribute<PluginMetadataAttribute>().Id + ":" + s_NoCooldownFullPermission;
+    }
 
-    private readonly KitsPlugin m_Plugin;
+    private readonly IPluginAccessor<KitsPlugin> m_Plugin;
     private readonly IPermissionChecker m_PermissionChecker;
     private readonly IOptions<KitCooldownOptions> m_Options;
     private readonly IServiceProvider m_ServiceProvider;
@@ -29,8 +35,8 @@ public class KitCooldownStore : IKitCooldownStore, IAsyncDisposable
 
     private IKitCooldownStoreProvider m_CooldownProvider = null!;
 
-    public KitCooldownStore(KitsPlugin plugin, IPermissionChecker permissionChecker, IOptions<KitCooldownOptions> options, IServiceProvider serviceProvider,
-        ILogger<KitCooldownStore> logger)
+    public KitCooldownStore(IPluginAccessor<KitsPlugin> plugin, IPermissionChecker permissionChecker, IOptions<KitCooldownOptions> options,
+        IServiceProvider serviceProvider, ILogger<KitCooldownStore> logger)
     {
         m_Plugin = plugin;
         m_PermissionChecker = permissionChecker;
@@ -41,9 +47,13 @@ public class KitCooldownStore : IKitCooldownStore, IAsyncDisposable
         AsyncHelper.RunSync(InitAsync);
     }
 
-    private async Task InitAsync()
+    internal async Task InitAsync()
     {
-        var configuration = m_Plugin.LifetimeScope.Resolve<IConfiguration>();
+        // todo: reinit if plugin configuration was updated
+
+        var plugin = m_Plugin.Instance ?? throw new Exception("Plugin is not loaded");
+        var configuration = plugin.LifetimeScope.Resolve<IConfiguration>();
+
         var type = configuration["cooldowns:connectionType"] ?? string.Empty;
         var providerType = m_Options.Value.FindType(type);
 
@@ -64,7 +74,7 @@ public class KitCooldownStore : IKitCooldownStore, IAsyncDisposable
             m_Logger.LogWarning("Unable to parse {DatabaseType}. Setting to default: `datastore`", type);
         }
 
-        m_CooldownProvider ??= new DataStoreKitCooldownStoreProvider(m_Plugin);
+        m_CooldownProvider ??= new DataStoreKitCooldownStoreProvider(plugin);
 
         await m_CooldownProvider.InitAsync();
     }
@@ -86,7 +96,7 @@ public class KitCooldownStore : IKitCooldownStore, IAsyncDisposable
 
     private async Task<bool> HasNoCooldownPermission(IPermissionActor actor)
     {
-        return await m_PermissionChecker.CheckPermissionAsync(actor, c_NoCooldownPermission) is PermissionGrantResult.Grant;
+        return await m_PermissionChecker.CheckPermissionAsync(actor, s_NoCooldownFullPermission) is PermissionGrantResult.Grant;
     }
 
     public ValueTask DisposeAsync()
