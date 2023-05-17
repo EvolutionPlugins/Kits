@@ -13,21 +13,15 @@ namespace Kits;
 
 public class KitsPlugin : OpenModUniversalPlugin
 {
-    private readonly ILogger<KitsPlugin> m_Logger;
-    private readonly IServiceProvider m_ServiceProvider;
-
-    public KitsPlugin(ILogger<KitsPlugin> logger, IServiceProvider serviceProvider) : base(serviceProvider)
+    public KitsPlugin(IServiceProvider serviceProvider) : base(serviceProvider)
     {
-        m_Logger = logger;
-        m_ServiceProvider = serviceProvider;
+        _ = serviceProvider.GetRequiredService<IKitStore>();
     }
 
     protected override async Task OnLoadAsync()
     {
-        m_Logger.LogInformation("Made with <3 by EvolutionPlugins");
-        m_Logger.LogInformation("https://github.com/evolutionplugins \\ https://github.com/diffoz");
-        m_Logger.LogInformation("Discord support: https://discord.gg/6KymqGv");
-
-        await m_ServiceProvider.GetRequiredService<IKitStore>().InitAsync();
+        Logger.LogInformation("Made with <3 by EvolutionPlugins");
+        Logger.LogInformation("https://github.com/evolutionplugins \\ https://github.com/diffoz");
+        Logger.LogInformation("Discord support: https://discord.gg/6KymqGv");
     }
 }

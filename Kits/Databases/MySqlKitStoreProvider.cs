@@ -3,9 +3,7 @@ using Kits.API.Databases;
 using Kits.API.Models;
 using Kits.Databases.MySql;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using OpenMod.API.Commands;
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -13,10 +11,6 @@ namespace Kits.Databases;
 
 public class MySqlKitStoreProvider : KitStoreProviderCore, IKitStoreProvider
 {
-    public MySqlKitStoreProvider(IServiceProvider provider) : this(provider.GetRequiredService<KitsPlugin>().LifetimeScope)
-    {
-    }
-
     public MySqlKitStoreProvider(ILifetimeScope lifetimeScope) : base(lifetimeScope)
     {
     }

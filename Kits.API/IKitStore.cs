@@ -27,10 +27,4 @@ public interface IKitStore
     Task RemoveKitAsync(string name);
 
     Task UpdateKitAsync(Kit kit);
-
-    /// <summary>
-    /// Initializing the kit store and <see cref="IKitStoreProvider"/>.
-    /// <b>Should not be called from plugins</b>
-    /// </summary>
-    Task InitAsync();
 }

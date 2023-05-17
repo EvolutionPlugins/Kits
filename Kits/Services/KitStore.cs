@@ -6,9 +6,9 @@ using Kits.API.Models;
 using Kits.Databases;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OpenMod.API;
 using OpenMod.API.Eventing;
 using OpenMod.API.Ioc;
 using OpenMod.API.Permissions;
@@ -21,42 +21,53 @@ using System.Threading.Tasks;
 
 namespace Kits.Services;
 
-[PluginServiceImplementation(Lifetime = ServiceLifetime.Singleton)]
+[ServiceImplementation(Lifetime = ServiceLifetime.Singleton)]
 public class KitStore : IKitStore, IAsyncDisposable
 {
     private readonly IPermissionRegistry m_PermissionRegistry;
     private readonly ILogger<KitStore> m_Logger;
     private readonly IEventBus m_EventBus;
     private readonly IOptions<KitStoreOptions> m_Options;
-    private readonly IServiceProvider m_ServiceProvider;
+    private readonly IRuntime m_Runtime;
 
-    private IOpenModPlugin m_Plugin = null!;
+    private IOpenModPlugin? m_Plugin;
     private IDisposable? m_ConfigurationChangedWatcher;
 
     public IKitStoreProvider DatabaseProvider { get; private set; } = null!;
 
     public KitStore(IPermissionRegistry permissionRegistry, ILogger<KitStore> logger,
-        IEventBus eventBus, IOptions<KitStoreOptions> options, IServiceProvider serviceProvider)
+        IEventBus eventBus, IOptions<KitStoreOptions> options, IRuntime runtime)
     {
         m_PermissionRegistry = permissionRegistry;
         m_Logger = logger;
         m_EventBus = eventBus;
         m_Options = options;
-        m_ServiceProvider = serviceProvider;
+        m_Runtime = runtime;
+        ScheduleWaitForPluginLoading();
+    }
+
+    private void ScheduleWaitForPluginLoading()
+    {
+        IDisposable eventHandler = NullDisposable.Instance;
+
+        eventHandler = m_EventBus.Subscribe<PluginActivatingEvent>(m_Runtime, async (_, _, @event) =>
+        {
+            if (@event.Plugin is not KitsPlugin)
+            {
+                return;
+            }
+
+            m_Plugin = @event.Plugin;
+            eventHandler.Dispose();
+            await InitAsync();
+        });
     }
 
     public async Task InitAsync()
     {
-        // already initialized
-        if (m_Plugin != null)
-        {
-            return;
-        }
-
-        m_Plugin = m_ServiceProvider.GetRequiredService<KitsPlugin>();
         await ParseLoadDatabase();
 
-        m_ConfigurationChangedWatcher = m_EventBus.Subscribe<PluginConfigurationChangedEvent>(m_Plugin, PluginConfigurationChangedAsync);
+        m_ConfigurationChangedWatcher = m_EventBus.Subscribe<PluginConfigurationChangedEvent>(m_Plugin!, PluginConfigurationChangedAsync);
     }
 
     private Task PluginConfigurationChangedAsync(IServiceProvider _, object? __,
@@ -67,7 +78,7 @@ public class KitStore : IKitStore, IAsyncDisposable
 
     private async Task ParseLoadDatabase()
     {
-        var configuration = m_Plugin.LifetimeScope.Resolve<IConfiguration>();
+        var configuration = m_Plugin!.LifetimeScope.Resolve<IConfiguration>();
         var type = configuration["database:connectionType"] ?? string.Empty;
         var databaseType = m_Options.Value.FindType(type);
 
@@ -76,11 +87,12 @@ public class KitStore : IKitStore, IAsyncDisposable
             m_Logger.LogInformation("Database type set to `{DatabaseType}`", type);
             try
             {
-                DatabaseProvider = (ActivatorUtilities.CreateInstance(m_ServiceProvider, databaseType) as IKitStoreProvider)!;
+                var serviceProvider = m_Plugin.LifetimeScope.Resolve<IServiceProvider>();
+                DatabaseProvider = (ActivatorUtilities.CreateInstance(serviceProvider, databaseType) as IKitStoreProvider)!;
             }
             catch (Exception ex)
             {
-                m_Logger.LogError(ex, "Failed to initialize {DatabaseName}. Defaulting to datastore", databaseType.Name);
+                m_Logger.LogError(ex, "Failed to initialize {DatabaseName}. Defaulting to `datastore`", databaseType.Name);
             }
         }
         else
@@ -129,13 +141,10 @@ public class KitStore : IKitStore, IAsyncDisposable
 
     public Task RemoveKitAsync(string kitName)
     {
-        if (string.IsNullOrEmpty(kitName))
-        {
-            return Task.FromException(new ArgumentException(
-                $"'{nameof(kitName)}' cannot be null or empty.", nameof(kitName)));
-        }
-
-        return DatabaseProvider.RemoveKitAsync(kitName);
+        return string.IsNullOrEmpty(kitName)
+            ? Task.FromException(new ArgumentException(
+                $"'{nameof(kitName)}' cannot be null or empty.", nameof(kitName)))
+            : DatabaseProvider.RemoveKitAsync(kitName);
     }
 
     public async Task UpdateKitAsync(Kit kit)
@@ -161,18 +170,13 @@ public class KitStore : IKitStore, IAsyncDisposable
 
     protected virtual void RegisterPermission(string kitName)
     {
-        m_PermissionRegistry.RegisterPermission(m_Plugin, ZString.Concat("kits.", kitName.ToLower()));
+        m_PermissionRegistry.RegisterPermission(m_Plugin!, ZString.Concat("kits.", kitName.ToLower()));
     }
 
     public ValueTask DisposeAsync()
     {
         m_ConfigurationChangedWatcher?.Dispose();
 
-        if (DatabaseProvider == null)
-        {
-            return new();
-        }
-
-        return new(DatabaseProvider.DisposeSyncOrAsync());
+        return DatabaseProvider == null ? new() : new(DatabaseProvider.DisposeSyncOrAsync());
     }
 }
