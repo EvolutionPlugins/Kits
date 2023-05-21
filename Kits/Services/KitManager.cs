@@ -5,6 +5,7 @@ using Kits.API.Cooldowns;
 using Kits.API.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging;
 using OpenMod.API.Commands;
 using OpenMod.API.Ioc;
 using OpenMod.API.Permissions;
@@ -14,6 +15,7 @@ using OpenMod.Extensions.Economy.Abstractions;
 using OpenMod.Extensions.Games.Abstractions.Players;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -33,17 +35,18 @@ public class KitManager : IKitManager
     private readonly IKitStore m_KitStore;
     private readonly IPermissionChecker m_PermissionChecker;
     private readonly IServiceProvider m_ServiceProvider;
-
-    private IStringLocalizer? m_StringLocalizer;
+    private readonly ILogger<KitManager> m_Logger;
+    private readonly IStringLocalizer? m_StringLocalizer;
 
     public KitManager(IEconomyProvider economyProvider, IKitCooldownStore kitCooldownStore, IKitStore kitStore, IPermissionChecker permissionChecker,
-        IPluginAccessor<KitsPlugin> pluginAccessor, IServiceProvider serviceProvider)
+        IPluginAccessor<KitsPlugin> pluginAccessor, IServiceProvider serviceProvider, ILogger<KitManager> logger)
     {
         m_EconomyProvider = economyProvider;
         m_KitCooldownStore = kitCooldownStore;
         m_KitStore = kitStore;
         m_PermissionChecker = permissionChecker;
         m_ServiceProvider = serviceProvider;
+        m_Logger = logger;
 
         m_StringLocalizer = pluginAccessor.Instance?.LifetimeScope.Resolve<IStringLocalizer>();
     }
@@ -93,6 +96,8 @@ public class KitManager : IKitManager
 
     public async Task<IReadOnlyCollection<Kit>> GetAvailableKitsForPlayerAsync(IPlayerUser player)
     {
+        var sw = m_Logger.IsEnabled(LogLevel.Debug) ? Stopwatch.StartNew() : null;
+
         var list = new List<Kit>();
         foreach (var kit in await m_KitStore.GetKitsAsync())
         {
@@ -101,6 +106,8 @@ public class KitManager : IKitManager
                 list.Add(kit);
             }
         }
+
+        m_Logger.LogDebug("Get available kits for user was take: {SpentMs}ms", sw?.ElapsedMilliseconds ?? 0);
 
         return list;
     }
