@@ -22,6 +22,7 @@
     <RepositoryUrl>https://github.com/DiFFoZ/Kits</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/DiFFoZ/Kits</PackageProjectUrl>
+	<PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -43,6 +44,10 @@
     <EmbeddedResource Include="config.yaml" />
     <EmbeddedResource Include="translations.yaml" />
   </ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\README.md" Pack="true" PackagePath="\"/>
+	</ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Kits.API\Kits.API.csproj" />

@@ -21,12 +21,17 @@
 		<RepositoryUrl>https://github.com/DiFFoZ/Kits</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageProjectUrl>https://github.com/DiFFoZ/Kits</PackageProjectUrl>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="OpenMod.Core" Version="3.3.14" />
 		<PackageReference Include="OpenMod.Extensions.Economy.Abstractions" Version="3.3.14" />
 		<PackageReference Include="OpenMod.Extensions.Games.Abstractions" Version="3.3.14" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\README.md" Pack="true" PackagePath="\"/>
 	</ItemGroup>
 
 </Project>

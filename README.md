@@ -1,5 +1,5 @@
 # Kits
-OpenMod universal plugin. Add kits system.
+OpenMod universal plugin. Adds the kits system.
 
 [![Nuget](https://img.shields.io/nuget/v/DiFFoZ.Kits)](https://www.nuget.org/packages/DiFFoZ.Kits/)
 [![Nuget](https://img.shields.io/nuget/dt/DiFFoZ.Kits?label=NuGet%20downloads)](https://www.nuget.org/packages/DiFFoZ.Kits/)
@@ -11,7 +11,7 @@ Run command `openmod install DiFFoZ.Kits`
 # Commands
 _Maybe is outdated so check help.md to get all commands_
 - kit &lt;name&gt; - Give a kit to yourself.
-- kit create &lt;name&gt; [cooldown] - Create a kit.
+- kit create &lt;name&gt; [cooldown] [cost] [money] [vehicleId] - Create a kit.
 - kit remove &lt;name&gt; - Remove a kit.
 - kits - Shows a list of available kits for player.
 
