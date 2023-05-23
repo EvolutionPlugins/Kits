@@ -23,6 +23,28 @@ public class DataStoreKitStoreProvider : KitStoreProviderCore, IKitStoreProvider
     {
     }
 
+    public async Task InitAsync()
+    {
+        await LoadFromDisk();
+
+        var component = LifetimeScope.Resolve<IOpenModComponent>();
+        m_FileWatcher = DataStore.AddChangeWatcher(c_KitsKey, component,
+            () => AsyncHelper.RunSync(LoadFromDisk));
+    }
+
+    private async Task LoadFromDisk()
+    {
+        if (await DataStore.ExistsAsync(c_KitsKey))
+        {
+            m_Data = await DataStore.LoadAsync<KitsData>(c_KitsKey) ?? new();
+            m_Data.Kits ??= new();
+            return;
+        }
+
+        m_Data = new() { Kits = new() };
+        await SaveToDisk();
+    }
+
     public async Task AddKitAsync(Kit kit)
     {
         if (kit is null)
@@ -47,30 +69,6 @@ public class DataStoreKitStoreProvider : KitStoreProviderCore, IKitStoreProvider
     public Task<IReadOnlyCollection<Kit>> GetKitsAsync()
     {
         return Task.FromResult((IReadOnlyCollection<Kit>)(m_Data.Kits ?? new()));
-    }
-
-    public async Task InitAsync()
-    {
-        await LoadFromDisk();
-
-        var component = LifetimeScope.Resolve<IOpenModComponent>();
-
-        m_FileWatcher = DataStore.AddChangeWatcher(c_KitsKey, component,
-            () => AsyncHelper.RunSync(LoadFromDisk));
-
-        await SaveToDisk();
-    }
-
-    private async Task LoadFromDisk()
-    {
-        if (await DataStore.ExistsAsync(c_KitsKey))
-        {
-            m_Data = await DataStore.LoadAsync<KitsData>(c_KitsKey) ?? new();
-            m_Data.Kits ??= new();
-            return;
-        }
-
-        m_Data = new() { Kits = new() };
     }
 
     public async Task RemoveKitAsync(string name)
@@ -108,13 +106,14 @@ public class DataStoreKitStoreProvider : KitStoreProviderCore, IKitStoreProvider
         return Task.FromResult(m_Data.Kits?.Find(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) != null);
     }
 
-    public void Dispose()
-    {
-        m_FileWatcher?.Dispose();
-    }
-
     private Task SaveToDisk()
     {
         return DataStore.SaveAsync(c_KitsKey, m_Data);
+    }
+
+    public void Dispose()
+    {
+        m_FileWatcher?.Dispose();
+        m_FileWatcher = null;
     }
 }

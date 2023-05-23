@@ -59,10 +59,10 @@ public class KitCooldownStore : IKitCooldownStore, IAsyncDisposable
 
         if (providerType != null)
         {
-            m_Logger.LogInformation("Cooldown store type set to `{DatabaseType}`", type);
+            m_Logger.LogDebug("Cooldown store type set to `{DatabaseType}`", type);
             try
             {
-                m_CooldownProvider = (ActivatorUtilities.CreateInstance(m_ServiceProvider, providerType) as IKitCooldownStoreProvider)!;
+                m_CooldownProvider = (IKitCooldownStoreProvider)ActivatorUtilities.CreateInstance(m_ServiceProvider, providerType);
             }
             catch (Exception ex)
             {

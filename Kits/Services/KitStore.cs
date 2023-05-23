@@ -67,13 +67,18 @@ public class KitStore : IKitStore, IAsyncDisposable
     {
         await ParseLoadDatabase();
 
-        m_ConfigurationChangedWatcher = m_EventBus.Subscribe<PluginConfigurationChangedEvent>(m_Plugin!, PluginConfigurationChangedAsync);
+        m_ConfigurationChangedWatcher = m_EventBus.Subscribe<PluginConfigurationChangedEvent>(m_Runtime, PluginConfigurationChangedAsync);
     }
 
     private Task PluginConfigurationChangedAsync(IServiceProvider _, object? __,
         PluginConfigurationChangedEvent @event)
     {
-        return @event.Plugin != m_Plugin ? Task.CompletedTask : ParseLoadDatabase();
+        if (@event.Plugin is not KitsPlugin || m_Plugin == null)
+        {
+            return Task.CompletedTask;
+        }
+
+        return ParseLoadDatabase();
     }
 
     private async Task ParseLoadDatabase()
@@ -84,11 +89,11 @@ public class KitStore : IKitStore, IAsyncDisposable
 
         if (databaseType != null)
         {
-            m_Logger.LogInformation("Database type set to `{DatabaseType}`", type);
+            m_Logger.LogDebug("Database type set to `{DatabaseType}`", type);
             try
             {
                 var serviceProvider = m_Plugin.LifetimeScope.Resolve<IServiceProvider>();
-                DatabaseProvider = (ActivatorUtilities.CreateInstance(serviceProvider, databaseType) as IKitStoreProvider)!;
+                DatabaseProvider = (IKitStoreProvider)ActivatorUtilities.CreateInstance(serviceProvider, databaseType);
             }
             catch (Exception ex)
             {
@@ -101,8 +106,31 @@ public class KitStore : IKitStore, IAsyncDisposable
         }
 
         DatabaseProvider ??= new DataStoreKitStoreProvider(m_Plugin.LifetimeScope);
+        try
+        {
+            await DatabaseProvider.InitAsync();
+        }
+        catch (Exception ex)
+        {
+            m_Logger.LogError(ex, "Failed to initialize {DatabaseProviderName}. Resetting to the default store provider",
+                DatabaseProvider.GetType().Name);
 
-        await DatabaseProvider.InitAsync();
+            if (DatabaseProvider is not DataStoreKitStoreProvider)
+            {
+                // dispose safely
+                try
+                {
+                    await DatabaseProvider.DisposeSyncOrAsync();
+                }
+                catch (Exception ex2)
+                {
+                    m_Logger.LogError(ex2, "Failed to dispose {DatabaseProviderName}", DatabaseProvider.GetType().Name);
+                }
+
+                DatabaseProvider = new DataStoreKitStoreProvider(m_Plugin.LifetimeScope);
+                await DatabaseProvider.InitAsync();
+            }
+        }
         await RegisterPermissionsAsync();
     }
 
@@ -170,13 +198,20 @@ public class KitStore : IKitStore, IAsyncDisposable
 
     protected virtual void RegisterPermission(string kitName)
     {
-        m_PermissionRegistry.RegisterPermission(m_Plugin!, ZString.Concat("kits.", kitName.ToLower()));
+        m_PermissionRegistry.RegisterPermission(m_Plugin!, ZString.Concat("kits.", kitName.ToLower()),
+            $"Grants access to the {kitName} kit");
     }
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         m_ConfigurationChangedWatcher?.Dispose();
+        m_ConfigurationChangedWatcher = null;
 
-        return DatabaseProvider == null ? new() : new(DatabaseProvider.DisposeSyncOrAsync());
+        if (DatabaseProvider != null)
+        {
+            await DatabaseProvider.DisposeSyncOrAsync();
+        }
+
+        DatabaseProvider = null!;
     }
 }
