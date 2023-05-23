@@ -103,6 +103,11 @@ public class DataStoreKitStoreProvider : KitStoreProviderCore, IKitStoreProvider
         await SaveToDisk();
     }
 
+    public Task<bool> IsKitExists(string name)
+    {
+        return Task.FromResult(m_Data.Kits?.Find(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) != null);
+    }
+
     public void Dispose()
     {
         m_FileWatcher?.Dispose();
@@ -111,10 +116,5 @@ public class DataStoreKitStoreProvider : KitStoreProviderCore, IKitStoreProvider
     private Task SaveToDisk()
     {
         return DataStore.SaveAsync(c_KitsKey, m_Data);
-    }
-
-    public Task<bool> IsKitExists(string name)
-    {
-        throw new NotImplementedException();
     }
 }

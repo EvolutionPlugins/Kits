@@ -147,14 +147,14 @@ public class KitStore : IKitStore, IAsyncDisposable
             : DatabaseProvider.RemoveKitAsync(kitName);
     }
 
-    public async Task UpdateKitAsync(Kit kit)
+    public Task UpdateKitAsync(Kit kit)
     {
-
+        return DatabaseProvider.UpdateKitAsync(kit);
     }
 
     public Task<bool> IsKitExists(string name)
     {
-        throw new NotImplementedException();
+        return DatabaseProvider.IsKitExists(name);
     }
 
     protected virtual async Task RegisterPermissionsAsync()
