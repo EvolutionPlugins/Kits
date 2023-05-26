@@ -1,7 +1,4 @@
 ﻿using Kits.API.Models;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OpenMod.Extensions.Games.Abstractions.Items;
 using System.Collections.Generic;
 using System.IO;
@@ -60,20 +57,5 @@ internal static class ConvertorExtension
         }
 
         return output;
-    }
-
-    // https://stackoverflow.com/questions/44829824/how-to-store-json-in-an-entity-field-with-ef-core
-    public static PropertyBuilder<List<KitItem>?> HasByteArrayConversion(this PropertyBuilder<List<KitItem>?> propertyBuilder)
-    {
-        var converter = new ValueConverter<List<KitItem>?, byte[]>
-        (
-        v => v.ConvertToByteArray(),
-        v => v.ConvertToKitItems()
-        );
-
-        propertyBuilder.HasConversion(converter);
-        propertyBuilder.Metadata.SetValueConverter(converter);
-
-        return propertyBuilder;
     }
 }

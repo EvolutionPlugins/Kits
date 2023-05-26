@@ -1,5 +1,7 @@
 ﻿using OpenMod.Extensions.Games.Abstractions.Items;
+using System;
 using System.IO;
+using System.Linq;
 
 namespace Kits.API.Models;
 
@@ -29,5 +31,15 @@ public class KitItem
     {
         ItemAssetId = br.ReadString();
         State.Deserialize(br);
+    }
+
+    public override int GetHashCode()
+    {
+        var itemStateDataHash = State.StateData.Aggregate(new HashCode(), (hash, i) =>
+        {
+            hash.Add(i);
+            return hash;
+        }).ToHashCode();
+        return HashCode.Combine(ItemAssetId, State.ItemAmount, State.ItemQuality, State.ItemDurability, itemStateDataHash);
     }
 }
