@@ -83,6 +83,9 @@ public class KitStore : IKitStore, IAsyncDisposable
 
     private async Task ParseLoadDatabase()
     {
+        DatabaseProvider?.DisposeSyncOrAsync();
+        DatabaseProvider = null!;
+
         var configuration = m_Plugin!.LifetimeScope.Resolve<IConfiguration>();
         var type = configuration["database:connectionType"] ?? string.Empty;
         var databaseType = m_Options.Value.FindType(type);
