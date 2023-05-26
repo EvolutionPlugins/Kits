@@ -8,6 +8,7 @@ using System.Linq;
 
 namespace Kits.Extensions;
 
+// todo: remove this when https://github.com/openmod/openmod/issues/355 got implemented
 internal static class UnturnedExtension
 {
     private static readonly bool s_IsUnturned = AppDomain.CurrentDomain.GetAssemblies()

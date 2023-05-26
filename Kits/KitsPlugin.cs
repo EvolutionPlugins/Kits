@@ -15,6 +15,7 @@ public class KitsPlugin : OpenModUniversalPlugin
 {
     public KitsPlugin(IServiceProvider serviceProvider) : base(serviceProvider)
     {
+        // loads the provider to add kits permission to help.md
         _ = serviceProvider.GetRequiredService<IKitStore>();
     }
 

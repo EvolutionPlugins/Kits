@@ -8,6 +8,7 @@ using OpenMod.Extensions.Games.Abstractions.Items;
 using OpenMod.Extensions.Games.Abstractions.Players;
 using OpenMod.Extensions.Games.Abstractions.Vehicles;
 using System;
+using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -49,10 +50,24 @@ public class CommandKitCreate : Command
             throw new UserFriendlyException("IPlayer doesn't have compatibility IHasInventory");
         }
 
+        TimeSpan cooldown;
+        try
+        {
+            // many users reports that cooldown not working (it actually works, but require a specific format)
+            cooldown = Context.Parameters.Count >= 2
+                ? await Context.Parameters.GetAsync<TimeSpan>(1)
+                : TimeSpan.Zero;
+        }
+        catch (UserFriendlyException ufe)
+        {
+            await PrintAsync(ufe.Message, Color.DarkRed); // "Invalid time span format"
+            await PrintAsync("Valid examples format for cooldown parameter: 5s / 5m / 5h / 5d", Color.DarkRed);
+
+            return;
+        }
+
         var name = Context.Parameters[0];
-        var cooldown = Context.Parameters.Count >= 2
-            ? await Context.Parameters.GetAsync<TimeSpan>(1)
-            : TimeSpan.Zero;
+        // cooldown [1]
         var cost = Context.Parameters.Count >= 3 ? await Context.Parameters.GetAsync<decimal>(2) : 0;
         var money = Context.Parameters.Count >= 4 ? await Context.Parameters.GetAsync<decimal>(3) : 0;
         var vehicleId = Context.Parameters.Count == 5 ? Context.Parameters[4] : null;
