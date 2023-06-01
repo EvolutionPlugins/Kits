@@ -73,7 +73,12 @@ public class KitManager : IKitManager
         if (!forceGiveKit && cooldown != null && cooldown.Value.TotalSeconds < kit.Cooldown)
         {
             throw new UserFriendlyException(m_StringLocalizer!["commands:kit:cooldown",
-                new { Kit = kit, Cooldown = kit.Cooldown - cooldown.Value.TotalSeconds }]);
+                new
+                {
+                    Kit = kit,
+                    Cooldown = kit.Cooldown - cooldown.Value.TotalSeconds,
+                    CooldownSpan = TimeSpan.FromSeconds(kit.Cooldown) - cooldown.Value
+                }]);
         }
 
         if (!forceGiveKit && kit.Cost != 0)

@@ -1,9 +1,11 @@
+# Learn about of SmartFormat.NET: https://github.com/axuno/SmartFormat/wiki/Syntax%2C-Terminology
+
 commands:
   kits: "Your available kits: {Kits:cond:{Kits:list:{Name}{Cost:cond:!=0?({}{MoneySymbol})|}|, }|'none'}"
   kit:
     success: "Kit {Kit.Name} successfully received"
     exist: "Kit with name {Name} already exists"
-    cooldown: "Kit {Kit.Name} have cooldown. Needs wait for {Cooldown:0.##} sec"
+    cooldown: "Kit {Kit.Name} have cooldown. Needs wait for {CooldownSpan:abbr}"
     noPermission: "You don't have permission to get a kit {Kit.Name}"
     notFound: "Kit {Name} not found"
     noMoney: "You don't have money to get a kit {Kit.Name}. Needs at least {Money}{MoneyName}{MoneySymbol}"
