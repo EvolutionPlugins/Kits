@@ -57,6 +57,16 @@ public class DataStoreKitStoreProvider : KitStoreProviderCore, IKitStoreProvider
             throw new UserFriendlyException(StringLocalizer["commands:kit:exist"]);
         }
 
+        // Tries to fix the issue when sometimes state of a item resetting to zero
+        // https://github.com/EvolutionPlugins/Kits/issues/7
+        if (kit.Items != null)
+        {
+            foreach (var item in kit.Items.Where(x => x?.State != null))
+            {
+                item.State.StateData = item.State.StateData?.ToArray() ?? Array.Empty<byte>();
+            }
+        }
+
         m_Data.Kits?.Add(kit);
         await SaveToDisk();
     }
