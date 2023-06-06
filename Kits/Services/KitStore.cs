@@ -32,6 +32,7 @@ public class KitStore : IKitStore, IAsyncDisposable
 
     private IOpenModPlugin? m_Plugin;
     private IDisposable? m_ConfigurationChangedWatcher;
+    private int m_KitsCount;
 
     public IKitStoreProvider DatabaseProvider { get; private set; } = null!;
 
@@ -137,9 +138,18 @@ public class KitStore : IKitStore, IAsyncDisposable
         await RegisterPermissionsAsync();
     }
 
-    public Task<IReadOnlyCollection<Kit>> GetKitsAsync()
+    public async Task<IReadOnlyCollection<Kit>> GetKitsAsync()
     {
-        return DatabaseProvider.GetKitsAsync();
+        var kits = await DatabaseProvider.GetKitsAsync();
+        if (kits.Count > m_KitsCount)
+        {
+            // new kits added from other server or manual manipulation in db
+            // registering new permission to prevent exception
+
+            await RegisterPermissionsAsync(kits);
+        }
+
+        return kits;
     }
 
     public async Task AddKitAsync(Kit kit)
@@ -188,9 +198,12 @@ public class KitStore : IKitStore, IAsyncDisposable
         return DatabaseProvider.IsKitExists(name);
     }
 
-    protected virtual async Task RegisterPermissionsAsync()
+    protected virtual async Task RegisterPermissionsAsync(IReadOnlyCollection<Kit>? kits = null)
     {
-        foreach (var kit in await DatabaseProvider.GetKitsAsync())
+        kits ??= await DatabaseProvider.GetKitsAsync();
+        m_KitsCount = kits.Count;
+
+        foreach (var kit in kits)
         {
             if (kit.Name != null)
             {
