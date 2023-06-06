@@ -70,7 +70,17 @@ public class MySqlKitStoreProvider : KitStoreProviderCore, IKitStoreProvider
     {
         await using var context = GetDbContext();
 
-        context.Kits.Update(kit);
+        // start to track the old kit
+        var oldKit = await context.Kits.FindAsync(kit.Id);
+
+        // update values
+        oldKit.Name = kit.Name;
+        oldKit.Cooldown = kit.Cooldown;
+        oldKit.Cost = kit.Cost;
+        oldKit.Money = kit.Money;
+        oldKit.VehicleId = kit.VehicleId;
+        oldKit.Items = kit.Items;
+
         await context.SaveChangesAsync();
     }
 
