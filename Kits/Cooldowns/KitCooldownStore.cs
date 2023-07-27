@@ -62,7 +62,8 @@ public class KitCooldownStore : IKitCooldownStore, IAsyncDisposable
             m_Logger.LogDebug("Cooldown store type set to `{DatabaseType}`", type);
             try
             {
-                m_CooldownProvider = (IKitCooldownStoreProvider)ActivatorUtilities.CreateInstance(m_ServiceProvider, providerType);
+                var serviceProvider = plugin.LifetimeScope.Resolve<IServiceProvider>();
+                m_CooldownProvider = (IKitCooldownStoreProvider)ActivatorUtilities.CreateInstance(serviceProvider, providerType);
             }
             catch (Exception ex)
             {

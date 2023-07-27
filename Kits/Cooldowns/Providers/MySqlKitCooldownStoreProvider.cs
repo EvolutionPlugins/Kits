@@ -1,29 +1,74 @@
-﻿using Kits.API.Cooldowns;
+﻿using Autofac;
+using Kits.API.Cooldowns;
+using Kits.Cooldowns.MySql;
+using Microsoft.EntityFrameworkCore;
 using OpenMod.API.Permissions;
+using OpenMod.Core.Users;
 using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Kits.Cooldowns.Providers;
 public class MySqlKitCooldownStoreProvider : IKitCooldownStoreProvider
 {
-    public MySqlKitCooldownStoreProvider()
+    private readonly ILifetimeScope m_LifetimeScope;
+
+    public MySqlKitCooldownStoreProvider(ILifetimeScope lifetimeScope)
     {
+        m_LifetimeScope = lifetimeScope;
     }
 
-    public Task<TimeSpan?> GetLastCooldownAsync(IPermissionActor actor, string kitName)
+    public async Task InitAsync()
     {
-        throw new NotImplementedException();
+        await using var context = GetDbContext();
+        await context.Database.MigrateAsync();
     }
 
-    public Task InitAsync()
+    public async Task<TimeSpan?> GetLastCooldownAsync(IPermissionActor actor, string kitName)
     {
-        throw new NotImplementedException();
+        EnsureActorIsPlayer(actor);
+
+        await using var context = GetDbContext();
+        var usedTime = context.KitCooldowns
+            .Where(c => c.Kit == kitName && c.PlayerId == actor.Id)
+            .FirstOrDefault()?.UsedTime;
+
+        return usedTime == null ? null : DateTime.UtcNow - usedTime;
     }
 
-    public Task RegisterCooldownAsync(IPermissionActor actor, string kitName, DateTime time)
+    public async Task RegisterCooldownAsync(IPermissionActor actor, string kitName, DateTime time)
     {
-        throw new NotImplementedException();
+        EnsureActorIsPlayer(actor);
+
+        await using var context = GetDbContext();
+
+        var cooldown = context.KitCooldowns.FirstOrDefault(c => c.Kit == kitName && c.PlayerId == actor.Id);
+        if (cooldown == null)
+        {
+            cooldown = new()
+            {
+                Kit = kitName,
+                PlayerId = actor.Id,
+                UsedTime = time
+            };
+
+            context.KitCooldowns.Add(cooldown);
+        }
+        else
+        {
+            cooldown.UsedTime = time;
+        }
+
+        await context.SaveChangesAsync();
     }
+
+    private void EnsureActorIsPlayer(IPermissionActor actor)
+    {
+        if (!actor.Type.Equals(KnownActorTypes.Player, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new Exception("Cooldowns are only handled for Player actor type");
+        }
+    }
+
+    protected virtual KitCooldownsDbContext GetDbContext() => m_LifetimeScope.Resolve<KitCooldownsDbContext>();
 }
