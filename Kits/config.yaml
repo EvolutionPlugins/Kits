@@ -2,6 +2,7 @@
   ConnectionStrings:
     # https://www.connectionstrings.com/mysql/
     default: "Server=127.0.0.1;Database=unturned;User=root;Password=root;"
+    cooldown: "Server=127.0.0.1;Database=unturned;User=root;Password=root;"
   # Type of datastore that will be used
   # datastore (default): will create 'kits.data.yaml' file that saves all kits
   # mysql: will create table that saves all kits

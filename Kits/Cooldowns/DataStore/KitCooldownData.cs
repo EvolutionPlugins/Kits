@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Kits.Cooldowns.Models;
+namespace Kits.Cooldowns.DataStore;
 
 public class KitCooldownData
 {

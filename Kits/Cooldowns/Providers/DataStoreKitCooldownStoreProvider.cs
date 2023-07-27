@@ -1,5 +1,5 @@
 ﻿using Kits.API.Cooldowns;
-using Kits.Cooldowns.Models;
+using Kits.Cooldowns.DataStore;
 using OpenMod.API.Permissions;
 using OpenMod.API.Persistence;
 using OpenMod.Core.Helpers;

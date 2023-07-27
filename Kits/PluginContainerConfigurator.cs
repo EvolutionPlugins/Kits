@@ -1,4 +1,5 @@
-﻿using Kits.Databases.MySql;
+﻿using Kits.Cooldowns.MySql;
+using Kits.Databases.MySql;
 using OpenMod.API.Plugins;
 using OpenMod.EntityFrameworkCore.MySql.Extensions;
 
@@ -9,5 +10,6 @@ public class PluginContainerConfigurator : IPluginContainerConfigurator
     public void ConfigureContainer(IPluginServiceConfigurationContext context)
     {
         context.ContainerBuilder.AddMySqlDbContext<KitsDbContext>();
+        context.ContainerBuilder.AddMySqlDbContext<KitCooldownsDbContext>();
     }
 }

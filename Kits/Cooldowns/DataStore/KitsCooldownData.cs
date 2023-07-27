@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Kits.Cooldowns.Models;
+namespace Kits.Cooldowns.DataStore;
 
 public class KitsCooldownData
 {
