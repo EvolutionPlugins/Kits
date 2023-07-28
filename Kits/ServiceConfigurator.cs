@@ -27,5 +27,7 @@ public class ServiceConfigurator : IServiceConfigurator
         {
             o.AddProvider<DataStoreKitCooldownStoreProvider>("datastore");
         });
+
+        serviceCollection.AddMemoryCache();
     }
 }

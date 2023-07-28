@@ -3,16 +3,24 @@ using Kits.API.Databases;
 using Kits.API.Models;
 using Kits.Databases.MySql;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using OpenMod.API.Commands;
+using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Kits.Databases;
 
-public class MySqlKitStoreProvider : KitStoreProviderCore, IKitStoreProvider
+public class MySqlKitStoreProvider : KitStoreProviderCore, IKitStoreProvider, IDisposable
 {
-    public MySqlKitStoreProvider(ILifetimeScope lifetimeScope) : base(lifetimeScope)
+    private const string c_CacheKey = "evolutionplugins-kits-kits";
+    private readonly IMemoryCache m_MemoryCache;
+    private readonly SemaphoreSlim m_Lock = new(1);
+
+    public MySqlKitStoreProvider(ILifetimeScope lifetimeScope, IMemoryCache memoryCache) : base(lifetimeScope)
     {
+        m_MemoryCache = memoryCache;
     }
 
     protected virtual KitsDbContext GetDbContext() => LifetimeScope.Resolve<KitsDbContext>();
@@ -34,10 +42,38 @@ public class MySqlKitStoreProvider : KitStoreProviderCore, IKitStoreProvider
 
         context.Kits.Add(kit);
         await context.SaveChangesAsync();
+
+        if (m_MemoryCache.TryGetValue<List<Kit>>(c_CacheKey, out var kits))
+        {
+            try
+            {
+                await m_Lock.WaitAsync();
+
+                kits.Add(kit);
+            }
+            finally
+            {
+                m_Lock.Release();
+            }
+        }
     }
 
     public async Task<Kit?> FindKitByNameAsync(string name)
     {
+        if (TryGetCachedKits(out var kits))
+        {
+            try
+            {
+                await m_Lock.WaitAsync();
+
+                return kits.Find(x => x.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase));
+            }
+            finally
+            {
+                m_Lock.Release();
+            }
+        }
+
         await using var context = GetDbContext();
 
         return await context.Kits
@@ -47,8 +83,7 @@ public class MySqlKitStoreProvider : KitStoreProviderCore, IKitStoreProvider
 
     public async Task<IReadOnlyCollection<Kit>> GetKitsAsync()
     {
-        await using var context = GetDbContext();
-        return await context.Kits.AsNoTracking().ToListAsync();
+        return await GetOrCreatedCachedListOfKitsAsync();
     }
 
     public async Task RemoveKitAsync(string name)
@@ -64,6 +99,28 @@ public class MySqlKitStoreProvider : KitStoreProviderCore, IKitStoreProvider
 
         context.Kits.Remove(kit);
         await context.SaveChangesAsync();
+
+        if (!TryGetCachedKits(out var kits))
+        {
+            return;
+        }
+
+        try
+        {
+            await m_Lock.WaitAsync();
+
+            var kitIndex = kits.FindIndex(x => x.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase));
+            if (kitIndex == -1)
+            {
+                return;
+            }
+
+            kits.RemoveAt(kitIndex);
+        }
+        finally
+        {
+            m_Lock.Release();
+        }
     }
 
     public async Task UpdateKitAsync(Kit kit)
@@ -74,19 +131,98 @@ public class MySqlKitStoreProvider : KitStoreProviderCore, IKitStoreProvider
         var oldKit = await context.Kits.FindAsync(kit.Id);
 
         // update values
-        oldKit.Name = kit.Name;
-        oldKit.Cooldown = kit.Cooldown;
-        oldKit.Cost = kit.Cost;
-        oldKit.Money = kit.Money;
-        oldKit.VehicleId = kit.VehicleId;
-        oldKit.Items = kit.Items;
+        UpdateValues(oldKit, kit);
 
         await context.SaveChangesAsync();
+
+        if (!TryGetCachedKits(out var kits))
+        {
+            return;
+        }
+
+        try
+        {
+            await m_Lock.WaitAsync();
+
+            var newOldKit = kits.Find(x => x.Name.Equals(kit.Name, StringComparison.InvariantCultureIgnoreCase));
+            if (newOldKit == null)
+            {
+                return;
+            }
+
+            UpdateValues(newOldKit, kit);
+        }
+        finally
+        {
+            m_Lock.Release();
+        }
+
+        static void UpdateValues(Kit oldKit, Kit newKit)
+        {
+            oldKit.Name = newKit.Name;
+            oldKit.Cooldown = newKit.Cooldown;
+            oldKit.Cost = newKit.Cost;
+            oldKit.Money = newKit.Money;
+            oldKit.VehicleId = newKit.VehicleId;
+            oldKit.Items = newKit.Items;
+        }
     }
 
     public async Task<bool> IsKitExists(string name)
     {
+        if (TryGetCachedKits(out var kits))
+        {
+            try
+            {
+                await m_Lock.WaitAsync();
+
+                return kits.Exists(x => x.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase));
+            }
+            finally
+            {
+                m_Lock.Release();
+            }
+        }
+
         await using var context = GetDbContext();
         return await context.Kits.AnyAsync(x => x.Name == name);
+    }
+
+    private bool TryGetCachedKits(out List<Kit> kits)
+    {
+        return m_MemoryCache.TryGetValue(c_CacheKey, out kits);
+    }
+
+    private async Task<List<Kit>> GetOrCreatedCachedListOfKitsAsync()
+    {
+        if (!TryGetCachedKits(out var kits))
+        {
+            try
+            {
+                await m_Lock.WaitAsync();
+
+                if (TryGetCachedKits(out kits))
+                {
+                    return kits;
+                }
+
+                await using var context = GetDbContext();
+                kits = await context.Kits.ToListAsync();
+
+                // todo: maybe configure the cache time
+                m_MemoryCache.Set(c_CacheKey, kits, TimeSpan.FromHours(1));
+            }
+            finally
+            {
+                m_Lock.Release();
+            }
+        }
+
+        return kits;
+    }
+
+    public void Dispose()
+    {
+        m_Lock.Dispose();
     }
 }

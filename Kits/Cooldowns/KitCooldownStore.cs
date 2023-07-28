@@ -30,18 +30,15 @@ public class KitCooldownStore : IKitCooldownStore, IAsyncDisposable
     private readonly IPluginAccessor<KitsPlugin> m_Plugin;
     private readonly IPermissionChecker m_PermissionChecker;
     private readonly IOptions<KitCooldownOptions> m_Options;
-    private readonly IServiceProvider m_ServiceProvider;
     private readonly ILogger<KitCooldownStore> m_Logger;
 
     private IKitCooldownStoreProvider m_CooldownProvider = null!;
 
-    public KitCooldownStore(IPluginAccessor<KitsPlugin> plugin, IPermissionChecker permissionChecker, IOptions<KitCooldownOptions> options,
-        IServiceProvider serviceProvider, ILogger<KitCooldownStore> logger)
+    public KitCooldownStore(IPluginAccessor<KitsPlugin> plugin, IPermissionChecker permissionChecker, IOptions<KitCooldownOptions> options, ILogger<KitCooldownStore> logger)
     {
         m_Plugin = plugin;
         m_PermissionChecker = permissionChecker;
         m_Options = options;
-        m_ServiceProvider = serviceProvider;
         m_Logger = logger;
 
         AsyncHelper.RunSync(InitAsync);
