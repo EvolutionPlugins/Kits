@@ -2,6 +2,7 @@
 using Kits.API.Databases;
 using Kits.API.Models;
 using Kits.Databases.MySql;
+using Kits.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using OpenMod.API.Commands;
@@ -16,7 +17,7 @@ public class MySqlKitStoreProvider : KitStoreProviderCore, IKitStoreProvider, ID
 {
     private const string c_CacheKey = "evolutionplugins-kits-kits";
     private readonly IMemoryCache m_MemoryCache;
-    private readonly SemaphoreSlim m_Lock = new(1);
+    private readonly AsyncLock m_AsyncLock = new();
 
     public MySqlKitStoreProvider(ILifetimeScope lifetimeScope, IMemoryCache memoryCache) : base(lifetimeScope)
     {
@@ -45,16 +46,8 @@ public class MySqlKitStoreProvider : KitStoreProviderCore, IKitStoreProvider, ID
 
         if (m_MemoryCache.TryGetValue<List<Kit>>(c_CacheKey, out var kits))
         {
-            try
-            {
-                await m_Lock.WaitAsync();
-
-                kits.Add(kit);
-            }
-            finally
-            {
-                m_Lock.Release();
-            }
+            using var _ = await m_AsyncLock.GetLockAsync();
+            kits.Add(kit);
         }
     }
 
@@ -62,16 +55,8 @@ public class MySqlKitStoreProvider : KitStoreProviderCore, IKitStoreProvider, ID
     {
         if (TryGetCachedKits(out var kits))
         {
-            try
-            {
-                await m_Lock.WaitAsync();
-
-                return kits.Find(x => x.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase));
-            }
-            finally
-            {
-                m_Lock.Release();
-            }
+            using var _ = await m_AsyncLock.GetLockAsync();
+            return kits.Find(x => x.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase));
         }
 
         await using var context = GetDbContext();
@@ -105,22 +90,15 @@ public class MySqlKitStoreProvider : KitStoreProviderCore, IKitStoreProvider, ID
             return;
         }
 
-        try
-        {
-            await m_Lock.WaitAsync();
+        using var _ = await m_AsyncLock.GetLockAsync();
 
-            var kitIndex = kits.FindIndex(x => x.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase));
-            if (kitIndex == -1)
-            {
-                return;
-            }
-
-            kits.RemoveAt(kitIndex);
-        }
-        finally
+        var kitIndex = kits.FindIndex(x => x.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase));
+        if (kitIndex == -1)
         {
-            m_Lock.Release();
+            return;
         }
+
+        kits.RemoveAt(kitIndex);
     }
 
     public async Task UpdateKitAsync(Kit kit)
@@ -140,22 +118,14 @@ public class MySqlKitStoreProvider : KitStoreProviderCore, IKitStoreProvider, ID
             return;
         }
 
-        try
+        using var _ = await m_AsyncLock.GetLockAsync();
+        var newOldKit = kits.Find(x => x.Name.Equals(kit.Name, StringComparison.InvariantCultureIgnoreCase));
+        if (newOldKit == null)
         {
-            await m_Lock.WaitAsync();
-
-            var newOldKit = kits.Find(x => x.Name.Equals(kit.Name, StringComparison.InvariantCultureIgnoreCase));
-            if (newOldKit == null)
-            {
-                return;
-            }
-
-            UpdateValues(newOldKit, kit);
+            return;
         }
-        finally
-        {
-            m_Lock.Release();
-        }
+
+        UpdateValues(newOldKit, kit);
 
         static void UpdateValues(Kit oldKit, Kit newKit)
         {
@@ -172,16 +142,8 @@ public class MySqlKitStoreProvider : KitStoreProviderCore, IKitStoreProvider, ID
     {
         if (TryGetCachedKits(out var kits))
         {
-            try
-            {
-                await m_Lock.WaitAsync();
-
-                return kits.Exists(x => x.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase));
-            }
-            finally
-            {
-                m_Lock.Release();
-            }
+            using var _ = await m_AsyncLock.GetLockAsync();
+            return kits.Exists(x => x.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase));
         }
 
         await using var context = GetDbContext();
@@ -197,25 +159,17 @@ public class MySqlKitStoreProvider : KitStoreProviderCore, IKitStoreProvider, ID
     {
         if (!TryGetCachedKits(out var kits))
         {
-            try
+            using var _ = await m_AsyncLock.GetLockAsync();
+            if (TryGetCachedKits(out kits))
             {
-                await m_Lock.WaitAsync();
-
-                if (TryGetCachedKits(out kits))
-                {
-                    return kits;
-                }
-
-                await using var context = GetDbContext();
-                kits = await context.Kits.ToListAsync();
-
-                // todo: maybe configure the cache time
-                m_MemoryCache.Set(c_CacheKey, kits, TimeSpan.FromHours(1));
+                return kits;
             }
-            finally
-            {
-                m_Lock.Release();
-            }
+
+            await using var context = GetDbContext();
+            kits = await context.Kits.ToListAsync();
+
+            // todo: maybe configure the cache time
+            m_MemoryCache.Set(c_CacheKey, kits, TimeSpan.FromHours(1));
         }
 
         return kits;
@@ -223,6 +177,6 @@ public class MySqlKitStoreProvider : KitStoreProviderCore, IKitStoreProvider, ID
 
     public void Dispose()
     {
-        m_Lock.Dispose();
+        m_AsyncLock.Dispose();
     }
 }
