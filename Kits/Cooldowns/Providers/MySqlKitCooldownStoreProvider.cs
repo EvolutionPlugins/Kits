@@ -29,9 +29,9 @@ public class MySqlKitCooldownStoreProvider : IKitCooldownStoreProvider
         EnsureActorIsPlayer(actor);
 
         await using var context = GetDbContext();
-        var usedTime = context.KitCooldowns
+        var usedTime = (await context.KitCooldowns
             .Where(c => c.Kit == kitName && c.PlayerId == actor.Id)
-            .FirstOrDefault()?.UsedTime;
+            .FirstOrDefaultAsync())?.UsedTime;
 
         return usedTime == null ? null : DateTime.UtcNow - usedTime;
     }
@@ -42,7 +42,7 @@ public class MySqlKitCooldownStoreProvider : IKitCooldownStoreProvider
 
         await using var context = GetDbContext();
 
-        var cooldown = context.KitCooldowns.FirstOrDefault(c => c.Kit == kitName && c.PlayerId == actor.Id);
+        var cooldown = await context.KitCooldowns.FirstOrDefaultAsync(c => c.Kit == kitName && c.PlayerId == actor.Id);
         if (cooldown == null)
         {
             cooldown = new()
