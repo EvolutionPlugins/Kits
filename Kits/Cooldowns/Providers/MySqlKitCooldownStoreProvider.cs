@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using OpenMod.API.Permissions;
 using OpenMod.Core.Users;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Kits.Cooldowns.Providers;
@@ -29,9 +28,8 @@ public class MySqlKitCooldownStoreProvider : IKitCooldownStoreProvider
         EnsureActorIsPlayer(actor);
 
         await using var context = GetDbContext();
-        var usedTime = (await context.KitCooldowns
-            .Where(c => c.Kit == kitName && c.PlayerId == actor.Id)
-            .FirstOrDefaultAsync())?.UsedTime;
+        DateTime? usedTime = (await context.KitCooldowns.FirstOrDefaultAsync(c => c.Kit == kitName && c.PlayerId == actor.Id))
+            ?.UsedTime;
 
         return usedTime == null ? null : DateTime.UtcNow - usedTime;
     }

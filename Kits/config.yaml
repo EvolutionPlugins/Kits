@@ -2,9 +2,10 @@
   ConnectionStrings:
     # https://www.connectionstrings.com/mysql/
     default: "Server=127.0.0.1;Database=unturned;User=root;Password=root;"
+    # Not needed if you're using datastore cooldowns provider
     cooldown: "Server=127.0.0.1;Database=unturned;User=root;Password=root;"
   # Type of datastore that will be used
-  # datastore (default): will create 'kits.data.yaml' file that saves all kits
+  # datastore: will create 'kits.data.yaml' file that saves all kits (default)
   # mysql: will create table that saves all kits
   connectionType: "datastore"
 
@@ -12,7 +13,7 @@
 wrapLines: true
 
 cooldowns:
-  # Type of store for cooldowns that will be used
-  # datastore (default): will create 'cooldowns.data.yaml' file that saves all cooldowns
-  # mysql: will create table that saves all cooldowns (NOT IMPLEMENTED YET)
+  # Type of store for cooldowns that will be used:
+  # datastore: will create 'cooldowns.data.yaml' file that saves all cooldowns (default)
+  # mysql: will create table that saves all cooldowns
   connectionType: "datastore"

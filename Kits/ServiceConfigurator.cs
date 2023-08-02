@@ -26,6 +26,7 @@ public class ServiceConfigurator : IServiceConfigurator
         serviceCollection.Configure<KitCooldownOptions>(o =>
         {
             o.AddProvider<DataStoreKitCooldownStoreProvider>("datastore");
+            o.AddProvider<MySqlKitCooldownStoreProvider>("mysql");
         });
 
         serviceCollection.AddMemoryCache();
