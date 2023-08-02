@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.0</TargetFrameworks>
+		<PackageLicenseExpression>EUPL-1.2</PackageLicenseExpression>
+		<RootNamespace>Kits.API</RootNamespace>
+		<AssemblyName>Kits.API</AssemblyName>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<GenerateNugetPackage>true</GenerateNugetPackage>
+		<Product>Kits.API</Product>
+		<LangVersion>10</LangVersion>
+		<Nullable>enable</Nullable>
+		<WarningsAsErrors>nullable</WarningsAsErrors>
+		<Version>0.0.0</Version>
+		<InformationalVersion>0.0.0</InformationalVersion>
+		<PackageVersion>0.0.0</PackageVersion>
+		<Authors>EvolutionPlugins</Authors>
+		<Company>EvolutionPlugins</Company>
+		<PackageId>DiFFoZ.Kits.API</PackageId>
+		<Description>API of OpenMod kits plugin</Description>
+		<RepositoryUrl>https://github.com/DiFFoZ/Kits</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageProjectUrl>https://github.com/DiFFoZ/Kits</PackageProjectUrl>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="OpenMod.Core" Version="3.3.15" />
+		<PackageReference Include="OpenMod.Extensions.Economy.Abstractions" Version="3.3.15" />
+		<PackageReference Include="OpenMod.Extensions.Games.Abstractions" Version="3.3.15" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\README.md" Pack="true" PackagePath="\"/>
+	</ItemGroup>
+
+</Project>

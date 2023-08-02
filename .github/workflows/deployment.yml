@@ -15,28 +15,33 @@ jobs:
     name: "NuGet Deployment"
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-      name: Checkout Repository
-      with:
-        fetch-depth: 0
+    - uses: actions/checkout@v3
     - name: Setup .NET
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: 6.0.x
     - name: Install dependencies
       run: dotnet restore
+
+    - name: API Update version
+      run: "sed -i \"s#<Version>0.0.0</Version>#<Version>${{ github.event.inputs.version }}</Version>#\" Kits.API/Kits.API.csproj"  
+    - name: API Update package version
+      run: "sed -i \"s#<PackageVersion>0.0.0</PackageVersion>#<PackageVersion>${{ github.event.inputs.version }}</PackageVersion>#\" Kits.API/Kits.API.csproj"  
+    - name: API Update informational version
+      run: "sed -i \"s#<InformationalVersion>0.0.0</InformationalVersion>#<InformationalVersion>${{ github.event.inputs.version }}</InformationalVersion>#\" Kits.API/Kits.API.csproj"    
+
     - name: Update version
       run: "sed -i \"s#<Version>0.0.0</Version>#<Version>${{ github.event.inputs.version }}</Version>#\" Kits/Kits.csproj"  
     - name: Update package version
       run: "sed -i \"s#<PackageVersion>0.0.0</PackageVersion>#<PackageVersion>${{ github.event.inputs.version }}</PackageVersion>#\" Kits/Kits.csproj"  
     - name: Update informational version
-      run: "sed -i \"s#<InformationalVersion>0.0.0</InformationalVersion>#<InformationalVersion>${{ github.event.inputs.version }}</InformationalVersion>#\" Kits/Kits.csproj"              
-    - name: Build
+      run: "sed -i \"s#<InformationalVersion>0.0.0</InformationalVersion>#<InformationalVersion>${{ github.event.inputs.version }}</InformationalVersion>#\" Kits/Kits.csproj"   
+    - name: Build API
+      run: dotnet build Kits.API/Kits.API.csproj --configuration Release --no-restore
+    - name: Build Kits
       run: dotnet build Kits/Kits.csproj --configuration Release --no-restore
     - name: Deploy to NuGet
-      run: dotnet nuget push Kits/bin/Release/*.nupkg
-             --api-key ${{ secrets.NUGET_DEPLOY_KEY }}
-             --source https://api.nuget.org/v3/index.json
+      run: dotnet nuget push *.nupkg --api-key ${{ secrets.NUGET_DEPLOY_KEY }} --source https://api.nuget.org/v3/index.json
     - name: Release to GitHub
       uses: actions/create-release@master
       env:

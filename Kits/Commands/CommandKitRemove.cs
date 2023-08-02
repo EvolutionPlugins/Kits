@@ -1,40 +1,37 @@
-﻿using System;
-using System.Threading.Tasks;
-using JetBrains.Annotations;
-using Kits.API;
+﻿using Kits.API;
 using Microsoft.Extensions.Localization;
 using OpenMod.Core.Commands;
+using System;
+using System.Threading.Tasks;
 
-namespace Kits.Commands
+namespace Kits.Commands;
+
+[Command("remove")]
+[CommandAlias("-")]
+[CommandAlias("delete")]
+[CommandParent(typeof(CommandKit))]
+[CommandSyntax("<name>")]
+public class CommandKitRemove : Command
 {
-    [Command("remove")]
-    [CommandAlias("-")]
-    [CommandAlias("delete")]
-    [CommandParent(typeof(CommandKit))]
-    [CommandSyntax("<name>")]
-    [UsedImplicitly]
-    public class CommandKitRemove : Command
+    private readonly IKitStore m_KitStore;
+    private readonly IStringLocalizer m_StringLocalizer;
+
+    public CommandKitRemove(IServiceProvider serviceProvider, IKitStore kitStore,
+        IStringLocalizer stringLocalizer) : base(serviceProvider)
     {
-        private readonly IKitStore m_KitStore;
-        private readonly IStringLocalizer m_StringLocalizer;
+        m_KitStore = kitStore;
+        m_StringLocalizer = stringLocalizer;
+    }
 
-        public CommandKitRemove(IServiceProvider serviceProvider, IKitStore kitStore,
-            IStringLocalizer stringLocalizer) : base(serviceProvider)
+    protected override async Task OnExecuteAsync()
+    {
+        if (Context.Parameters.Length != 1)
         {
-            m_KitStore = kitStore;
-            m_StringLocalizer = stringLocalizer;
+            throw new CommandWrongUsageException(Context);
         }
 
-        protected override async Task OnExecuteAsync()
-        {
-            if (Context.Parameters.Length != 1)
-            {
-                throw new CommandWrongUsageException(Context);
-            }
-
-            var kitName = Context.Parameters[0];
-            await m_KitStore.RemoveKitAsync(kitName);
-            await PrintAsync(m_StringLocalizer["commands:kit:remove:success", new { Name = kitName }]);
-        }
+        var kitName = Context.Parameters[0];
+        await m_KitStore.RemoveKitAsync(kitName);
+        await PrintAsync(m_StringLocalizer["commands:kit:remove:success", new { Name = kitName }]);
     }
 }
