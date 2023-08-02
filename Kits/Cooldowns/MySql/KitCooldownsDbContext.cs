@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OpenMod.EntityFrameworkCore;
 using OpenMod.EntityFrameworkCore.Configurator;
 using System;
@@ -20,5 +21,21 @@ public class KitCooldownsDbContext : OpenModDbContext<KitCooldownsDbContext>
 
     public KitCooldownsDbContext(IDbContextConfigurator configurator, IServiceProvider serviceProvider) : base(configurator, serviceProvider)
     {
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        var dateTimeConverter = new ValueConverter<DateTime, DateTime>(
+        v => v.ToUniversalTime(),
+        v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
+        var property = modelBuilder
+            .Entity<KitCooldown>()
+            .Property(x => x.UsedTime);
+
+        // adding conversion to save DateTime as UTC and get back as UTC
+        property.HasConversion(dateTimeConverter);
     }
 }
