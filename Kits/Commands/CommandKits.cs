@@ -4,7 +4,6 @@ using System.Drawing;
 using System.Text;
 using System.Threading.Tasks;
 using EvolutionPlugins.Economy.Stub.Services;
-using JetBrains.Annotations;
 using Kits.API;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Localization;
@@ -21,7 +20,6 @@ namespace Kits.Commands
     [Command("kits")]
     [RegisterCommandPermission("show.other", Description = "Shows the available kits of another player")]
     [CommandSyntax("[player]")]
-    [UsedImplicitly]
     public class CommandKits : Command
     {
         private readonly IKitManager m_KitManager;

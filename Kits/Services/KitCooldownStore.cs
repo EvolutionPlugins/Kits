@@ -1,5 +1,4 @@
-﻿using JetBrains.Annotations;
-using Kits.API;
+﻿using Kits.API;
 using Kits.Models;
 using Microsoft.Extensions.DependencyInjection;
 using OpenMod.API.Ioc;
@@ -16,7 +15,6 @@ using System.Threading.Tasks;
 namespace Kits.Providers
 {
     [PluginServiceImplementation(Lifetime = ServiceLifetime.Singleton)]
-    [UsedImplicitly]
     public class KitCooldownStore : IKitCooldownStore, IDisposable
     {
         private const string c_CooldownKey = "cooldowns";

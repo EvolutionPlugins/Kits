@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
 using Kits.API;
 using Microsoft.Extensions.Localization;
 using OpenMod.Core.Commands;
@@ -12,7 +11,6 @@ namespace Kits.Commands
     [CommandAlias("delete")]
     [CommandParent(typeof(CommandKit))]
     [CommandSyntax("<name>")]
-    [UsedImplicitly]
     public class CommandKitRemove : Command
     {
         private readonly IKitStore m_KitStore;

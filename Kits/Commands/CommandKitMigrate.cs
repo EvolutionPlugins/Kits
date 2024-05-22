@@ -1,6 +1,4 @@
-﻿extern alias JetBrainsAnnotations;
-using JetBrainsAnnotations::JetBrains.Annotations;
-using Kits.API;
+﻿using Kits.API;
 using Kits.Databases;
 using Kits.Databases.Mysql;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +15,6 @@ namespace Kits.Commands
     [Command("migrate")]
     [CommandActor(typeof(ConsoleActor))]
     [CommandParent(typeof(CommandKit))]
-    [UsedImplicitly]
     public class CommandKitMigrate : Command
     {
         private readonly IServiceProvider m_ServiceProvider;

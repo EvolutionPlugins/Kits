@@ -1,5 +1,4 @@
-﻿extern alias JetBrainsAnnotations;
-using Kits.API;
+﻿using Kits.API;
 using Kits.Models;
 using OpenMod.API.Commands;
 using OpenMod.Core.Helpers;

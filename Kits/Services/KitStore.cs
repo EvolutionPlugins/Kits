@@ -1,5 +1,4 @@
-﻿using JetBrains.Annotations;
-using Kits.API;
+﻿using Kits.API;
 using Kits.Databases;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -15,7 +14,6 @@ using System.Threading.Tasks;
 namespace Kits.Providers
 {
     [PluginServiceImplementation(Lifetime = ServiceLifetime.Singleton)]
-    [UsedImplicitly]
     public class KitStore : IKitStore, IAsyncDisposable
     {
         public const string c_KitsKey = "kits";

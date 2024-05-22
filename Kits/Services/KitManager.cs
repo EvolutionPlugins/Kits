@@ -1,5 +1,4 @@
-﻿using JetBrains.Annotations;
-using Kits.API;
+﻿using Kits.API;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using OpenMod.API.Commands;
@@ -15,7 +14,6 @@ using System.Threading.Tasks;
 namespace Kits.Providers
 {
     [PluginServiceImplementation(Lifetime = ServiceLifetime.Transient, Priority = Priority.Lowest)]
-    [UsedImplicitly]
     public class KitManager : IKitManager
     {
         private readonly IEconomyProvider m_EconomyProvider;

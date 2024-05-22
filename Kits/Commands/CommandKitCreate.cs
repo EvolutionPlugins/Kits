@@ -1,5 +1,4 @@
-﻿using JetBrains.Annotations;
-using Kits.API;
+﻿using Kits.API;
 using Kits.Extensions;
 using Microsoft.Extensions.Localization;
 using OpenMod.API.Commands;
@@ -19,7 +18,6 @@ namespace Kits.Commands
     [CommandActor(typeof(IPlayerUser))]
     [CommandParent(typeof(CommandKit))]
     [CommandSyntax("<name> [cooldown] [cost] [money] [vehicleId]")]
-    [UsedImplicitly]
     public class CommandKitCreate : Command
     {
         private static readonly bool s_IsUnturned = AppDomain.CurrentDomain.GetAssemblies()

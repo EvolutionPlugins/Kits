@@ -12,7 +12,6 @@ using System.Threading.Tasks;
 
 namespace Kits
 {
-    [UsedImplicitly]
     public class Kits : OpenModUniversalPlugin
     {
         private readonly ILogger<Kits> m_Logger;

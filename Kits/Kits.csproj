@@ -6,6 +6,7 @@
     <PackageTags>openmod openmod-plugin universal</PackageTags>
 	  <RootNamespace>Kits</RootNamespace>
     <AssemblyName>Kits</AssemblyName>
+    <LangVersion>12</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateNugetPackage>true</GenerateNugetPackage>
     <Product>Kits</Product>
