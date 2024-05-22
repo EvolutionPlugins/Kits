@@ -50,7 +50,7 @@ namespace Kits.Providers
         private async Task ParseLoadDatabase()
         {
             var type = m_Plugin.Configuration["database:connectionType"];
-            m_Database = type.ToLower() switch
+            m_Database = type?.ToLower() switch
             {
                 "mysql" => new MySqlKitDatabase(m_Provider),
                 "datastore" => new DataStoreKitDatabase(m_Plugin),
