@@ -11,7 +11,7 @@ namespace Kits.Extensions
     public static class UnturnedExtension
     {
         private static readonly bool s_IsUnturned = AppDomain.CurrentDomain.GetAssemblies()
-            .Any(x => x.GetName().Name.Equals("OpenMod.Unturned"));
+            .Any(x => x.GetName()!.Name!.Equals("OpenMod.Unturned"));
 
         public static void AddClothes(IPlayerUser user, IList<KitItem> kitsItems)
         {

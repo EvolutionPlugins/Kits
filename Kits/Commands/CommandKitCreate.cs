@@ -21,7 +21,7 @@ namespace Kits.Commands
     public class CommandKitCreate : Command
     {
         private static readonly bool s_IsUnturned = AppDomain.CurrentDomain.GetAssemblies()
-            .Any(x => x.GetName().Name.Equals("OpenMod.Unturned.Module.Shared"));
+            .Any(x => x.GetName()!.Name!.Equals("OpenMod.Unturned.Module.Shared"));
 
         private readonly IKitStore m_KitStore;
         private readonly IStringLocalizer m_StringLocalizer;

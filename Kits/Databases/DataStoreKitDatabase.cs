@@ -27,7 +27,7 @@ namespace Kits.Databases
                 throw new ArgumentNullException(nameof(kit));
             }
 
-            if (m_Data.Kits.Any(x => x.Name.Equals(kit.Name, StringComparison.OrdinalIgnoreCase)))
+            if (m_Data.Kits!.Any(x => x.Name.Equals(kit.Name, StringComparison.OrdinalIgnoreCase)))
             {
                 throw new UserFriendlyException(StringLocalizer["commands:kit:exist"]);
             }
