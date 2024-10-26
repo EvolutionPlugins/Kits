@@ -1,19 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Text;
 using System.Threading.Tasks;
 using EvolutionPlugins.Economy.Stub.Services;
 using Kits.API;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Localization;
-using Microsoft.Extensions.Logging;
 using OpenMod.API.Permissions;
 using OpenMod.Core.Commands;
 using OpenMod.Core.Permissions;
 using OpenMod.Extensions.Economy.Abstractions;
 using OpenMod.Extensions.Games.Abstractions.Players;
-using SmartFormat.ZString;
 
 namespace Kits.Commands
 {
@@ -25,15 +19,13 @@ namespace Kits.Commands
         private readonly IKitManager m_KitManager;
         private readonly IStringLocalizer m_StringLocalizer;
         private readonly IEconomyProvider m_EconomyProvider;
-        private readonly IConfiguration m_Configuration;
 
         public CommandKits(IServiceProvider serviceProvider, IKitManager kitManager, IStringLocalizer stringLocalizer,
-            IEconomyProvider economyProvider, IConfiguration configuration) : base(serviceProvider)
+            IEconomyProvider economyProvider) : base(serviceProvider)
         {
             m_KitManager = kitManager;
             m_StringLocalizer = stringLocalizer;
             m_EconomyProvider = economyProvider;
-            m_Configuration = configuration;
         }
 
         protected override async Task OnExecuteAsync()
@@ -66,52 +58,6 @@ namespace Kits.Commands
                 MoneySymbol = moneySymbol,
                 MoneyName = moneyName
             }]);
-        }
-
-        public override async Task PrintAsync(string message)
-        {
-            if (m_Configuration.GetValue("wrapLines", true))
-            {
-                foreach (var msg in WrapLines(message))
-                {
-                    await PrintAsync(msg, Color.White);
-                }
-                return;
-            }
-
-            await PrintAsync(message, Color.White);
-        }
-
-        private static IEnumerable<string> WrapLines(string line)
-        {
-            const int MaxLength = 90;
-
-            using var currentLine = new ZStringBuilder(false);
-
-            foreach (var currentWord in line.Split(' '))
-            {
-                if (currentLine.Length > MaxLength ||
-                    currentLine.Length + currentWord.Length > MaxLength)
-                {
-                    yield return currentLine.ToString();
-                    currentLine.Clear();
-                }
-
-                if (currentLine.Length > 0)
-                {
-                    currentLine.Append(" ");
-                    currentLine.Append(currentWord);
-                }
-                else
-                {
-                    currentLine.Append(currentWord);
-                }
-            }
-
-            if (currentLine.Length > 0)
-            {
-                yield return currentLine.ToString();
-            }
         }
     }
 }
